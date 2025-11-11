@@ -30,3 +30,6 @@ This journal tracks substantive work on documents, diagrams, and documentation c
 
 9. **Task - README documentation update**: Rewrote README.md following modus primaris principles with features listed first, all standard badges, and integrated screenshots<br>
     **Result**: Created flowing narrative documentation with GitHub Actions, npm, PyPI, and download badges, prominent features section with bullet points, concise usage instructions, and three screenshots (.resources/screenshot-menu.png, screenshot-toc.png, screenshot-settings.png) showing context menu, generated TOC output, and settings interface with brief explanatory text before each image
+
+10. **Task - GitHub Actions workflow update**: Replaced default workflow files with production-ready configurations from jupyterlab_markdown_viewer_toc_fix reference implementation<br>
+    **Result**: Created six workflow files - build.yml (CI with lint, test, build, package, isolated test, and integration tests), check-release.yml (release validation), enforce-label.yml (PR label enforcement), prep-release.yml (manual release preparation), publish-release.yml (two-step release publishing with npm/PyPI), and update-integration-tests.yml (Playwright snapshot updates via PR comments) with proper package naming jupyterlab_markdown_insert_content_extension throughout
