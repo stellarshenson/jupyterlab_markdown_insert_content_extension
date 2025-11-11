@@ -1,5 +1,30 @@
 # Making a new release of jupyterlab_markdown_insert_content_extension
 
+## Current Version: 1.0.22
+
+### Release Notes
+
+This release introduces the core table of contents insertion functionality with configurable settings and comprehensive documentation.
+
+**Key Features**:
+- Context menu integration for TOC insertion in markdown files and notebook cells
+- Configurable TOC caption and maximum heading level
+- Code block filtering to exclude headings in fenced code blocks
+- JupyterLab-compatible anchor ID generation
+- Cursor-aware insertion
+- Dual mode support (file editors and notebooks)
+
+**Settings**:
+- `tocCaption`: Markdown content before TOC (default: `## Table of Contents`)
+- `tocMaxLevel`: Maximum heading level 1-6 (default: 3)
+
+**Documentation**:
+- README with features, usage, and screenshots
+- GitHub Actions workflows for CI/CD
+- Complete package metadata
+
+---
+
 The extension can be published to `PyPI` and `npm` manually or using the [Jupyter Releaser](https://github.com/jupyter-server/jupyter_releaser).
 
 ## Manual release
