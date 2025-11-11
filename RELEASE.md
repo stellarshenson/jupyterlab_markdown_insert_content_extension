@@ -1,5 +1,8 @@
 # Release v1.0.22
 
+**Release Date**: 2025-01-11
+**Tag**: RELEASE_1.0.22
+
 ## Features
 
 - Table of contents insertion with context menu integration for markdown files and notebook cells

@@ -2,7 +2,9 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
-## 1.0.22
+## 1.0.22 (2025-01-11)
+
+**Released**: RELEASE_1.0.22
 
 - Implemented table of contents insertion with context menu integration
 - Added configurable settings for TOC caption and maximum heading level
