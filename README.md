@@ -109,6 +109,7 @@ jupyter labextension list  # Find labextensions folder
 ### Testing
 
 **Frontend tests**:
+
 ```bash
 jlpm test
 ```

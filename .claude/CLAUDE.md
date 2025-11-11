@@ -12,6 +12,7 @@ This file extends workspace-level configuration with project-specific rules.
 **Purpose**: Extension for inserting reusable content blocks into markdown cells in JupyterLab
 
 ### Technology Stack
+
 - JupyterLab 4.x extension framework
 - TypeScript for frontend components
 - Python for backend server extension
@@ -20,12 +21,14 @@ This file extends workspace-level configuration with project-specific rules.
 - pytest for Python testing
 
 ### Naming Conventions
+
 - Package name: `jupyterlab_markdown_insert_content_extension`
 - Repository naming follows pattern: `jupyterlab_<feature>_extension`
 - Python module uses underscores
 - TypeScript/JavaScript uses camelCase for variables, PascalCase for classes
 
 ### Development Workflow
+
 - Use `jlpm` command for package management (JupyterLab's wrapper around yarn)
 - Development install: `pip install -e .`
 - Build frontend: `jlpm build`
