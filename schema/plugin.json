@@ -1,0 +1,24 @@
+{
+  "jupyter.lab.setting-icon": "ui-components:markdown",
+  "jupyter.lab.setting-icon-label": "Markdown Insert Content",
+  "title": "Markdown Insert Content",
+  "description": "Settings for markdown content insertion extension",
+  "type": "object",
+  "properties": {
+    "tocCaption": {
+      "type": "string",
+      "title": "Table of Contents Caption",
+      "description": "Markdown content to insert before TOC (can be heading like '## Contents', plain text, or any markdown)",
+      "default": "## Table of Contents"
+    },
+    "tocMaxLevel": {
+      "type": "number",
+      "title": "Maximum Heading Level",
+      "description": "Maximum heading level to include in TOC (1-6, where 1=h1, 2=h2, etc.)",
+      "default": 6,
+      "minimum": 1,
+      "maximum": 6
+    }
+  },
+  "additionalProperties": false
+}
