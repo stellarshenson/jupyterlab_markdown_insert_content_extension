@@ -15,7 +15,7 @@
       "type": "number",
       "title": "Maximum Heading Level",
       "description": "Maximum heading level to include in TOC (1-6, where 1=h1, 2=h2, etc.)",
-      "default": 6,
+      "default": 3,
       "minimum": 1,
       "maximum": 6
     }

@@ -1,24 +1,34 @@
 # jupyterlab_markdown_insert_content_extension
 
-[![Github Actions Status](/workflows/Build/badge.svg)](/actions/workflows/build.yml)
+[![GitHub Actions](https://github.com/stellarshenson/jupyterlab_markdown_insert_content_extension/actions/workflows/build.yml/badge.svg)](https://github.com/stellarshenson/jupyterlab_markdown_insert_content_extension/actions/workflows/build.yml)
+[![npm version](https://img.shields.io/npm/v/jupyterlab_markdown_insert_content_extension.svg)](https://www.npmjs.com/package/jupyterlab_markdown_insert_content_extension)
+[![PyPI version](https://img.shields.io/pypi/v/jupyterlab_markdown_insert_content_extension.svg)](https://pypi.org/project/jupyterlab_markdown_insert_content_extension/)
+[![Total PyPI downloads](https://static.pepy.tech/badge/jupyterlab_markdown_insert_content_extension)](https://pepy.tech/project/jupyterlab_markdown_insert_content_extension)
+[![JupyterLab 4](https://img.shields.io/badge/JupyterLab-4-orange.svg)](https://jupyterlab.readthedocs.io/en/stable/)
 
-Jupyterlab extension to automatically insert content into markdown - such as TOC, bibliography, list of figures etc.
+JupyterLab extension for inserting reusable content blocks into markdown files and notebook cells, starting with automatic table of contents generation.
 
-**Table of Contents**
+## Features
 
-- [jupyterlab_markdown_insert_content_extension](#jupyterlab_markdown_insert_content_extension)
-  - [Requirements](#requirements)
-  - [Install](#install)
-  - [Uninstall](#uninstall)
-  - [Contributing](#contributing)
-    - [Development install](#development-install)
-    - [Development uninstall](#development-uninstall)
-    - [Testing the extension](#testing-the-extension)
-      - [Frontend tests](#frontend-tests)
-      - [Integration tests](#integration-tests)
-    - [Packaging the extension](#packaging-the-extension)
+- **Context menu integration** - right-click in markdown editors or notebook cells to insert content
+- **Table of contents generation** - automatically extracts headings and creates hierarchical TOC with working anchor links
+- **Configurable settings** - customize TOC caption and maximum heading depth through JupyterLab settings
+- **Code block filtering** - excludes headings within fenced code blocks from TOC
+- **JupyterLab-compatible anchors** - generates anchor IDs matching JupyterLab's format for reliable navigation
+- **Dual mode support** - works in both markdown file editors and notebook markdown cells
+- **Cursor-aware insertion** - inserts content at current cursor position
 
+Right-click in markdown editor or notebook cell to access the context menu:
 
+![](.resources/screenshot-menu.png)
+
+Generated table of contents with hierarchical structure and working anchor links:
+
+![](.resources/screenshot-toc.png)
+
+Configure TOC caption and maximum heading level through JupyterLab settings:
+
+![](.resources/screenshot-settings.png)
 
 ## Requirements
 
@@ -26,95 +36,86 @@ Jupyterlab extension to automatically insert content into markdown - such as TOC
 
 ## Install
 
-To install the extension, execute:
-
 ```bash
 pip install jupyterlab_markdown_insert_content_extension
 ```
 
-## Uninstall
+## Usage
 
-To remove the extension, execute:
+### Insert Table of Contents
+
+1. Open a markdown file or create a markdown cell in a notebook
+2. Position cursor where you want the TOC inserted
+3. Right-click and select "Insert Table of Contents"
+4. TOC is generated with links to all headings in the document
+
+### Configure Settings
+
+Access settings through Settings -> Settings Editor -> Markdown Insert Content:
+
+- **TOC Caption** - markdown content inserted before TOC list (default: `## Table of Contents`)
+- **Maximum Heading Level** - deepest heading level to include (1-6, default: 3)
+
+Settings apply immediately without restart.
+
+## Uninstall
 
 ```bash
 pip uninstall jupyterlab_markdown_insert_content_extension
 ```
 
-## Contributing
+## Development
 
 ### Development install
 
-Note: You will need NodeJS to build the extension package.
-
-The `jlpm` command is JupyterLab's pinned version of
-[yarn](https://yarnpkg.com/) that is installed with JupyterLab. You may use
-`yarn` or `npm` in lieu of `jlpm` below.
-
 ```bash
-# Clone the repo to your local environment
-# Change directory to the jupyterlab_markdown_insert_content_extension directory
+# Clone repository
+git clone https://github.com/stellarshenson/jupyterlab_markdown_insert_content_extension.git
+cd jupyterlab_markdown_insert_content_extension
 
-# Set up a virtual environment and install package in development mode
+# Set up virtual environment
 python -m venv .venv
 source .venv/bin/activate
 pip install --editable "."
 
-# Link your development version of the extension with JupyterLab
+# Link extension with JupyterLab
 jupyter labextension develop . --overwrite
 
-# Rebuild extension Typescript source after making changes
-# IMPORTANT: Unlike the steps above which are performed only once, do this step
-# every time you make a change.
+# Build extension
+jlpm install
 jlpm build
 ```
 
-You can watch the source directory and run JupyterLab at the same time in different terminals to watch for changes in the extension's source and automatically rebuild the extension.
+### Development workflow
 
 ```bash
-# Watch the source directory in one terminal, automatically rebuilding when needed
+# Watch mode - automatically rebuilds on changes
 jlpm watch
-# Run JupyterLab in another terminal
+
+# In another terminal, run JupyterLab
 jupyter lab
 ```
 
-With the watch command running, every saved change will immediately be built locally and available in your running JupyterLab. Refresh JupyterLab to load the change in your browser (you may need to wait several seconds for the extension to be rebuilt).
-
-By default, the `jlpm build` command generates the source maps for this extension to make it easier to debug using the browser dev tools. To also generate source maps for the JupyterLab core extensions, you can run the following command:
-
-```bash
-jupyter lab build --minimize=False
-```
+Refresh JupyterLab after changes to load updated extension.
 
 ### Development uninstall
 
 ```bash
 pip uninstall jupyterlab_markdown_insert_content_extension
+jupyter labextension list  # Find labextensions folder
+# Remove symlink from labextensions folder
 ```
 
-In development mode, you will also need to remove the symlink created by `jupyter labextension develop`
-command. To find its location, you can run `jupyter labextension list` to figure out where the `labextensions`
-folder is located. Then you can remove the symlink named `jupyterlab_markdown_insert_content_extension` within that folder.
+### Testing
 
-### Testing the extension
-
-#### Frontend tests
-
-This extension is using [Jest](https://jestjs.io/) for JavaScript code testing.
-
-To execute them, execute:
-
-```sh
-jlpm
+**Frontend tests**:
+```bash
 jlpm test
 ```
 
-#### Integration tests
+**Integration tests**:
+See [ui-tests/README.md](./ui-tests/README.md) for Playwright integration tests.
 
-This extension uses [Playwright](https://playwright.dev/docs/intro) for the integration tests (aka user level tests).
-More precisely, the JupyterLab helper [Galata](https://github.com/jupyterlab/jupyterlab/tree/master/galata) is used to handle testing the extension in JupyterLab.
+### Packaging
 
-More information are provided within the [ui-tests](./ui-tests/README.md) README.
-
-### Packaging the extension
-
-See [RELEASE](RELEASE.md)
+See [RELEASE.md](RELEASE.md) for release process.

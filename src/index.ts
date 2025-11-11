@@ -222,7 +222,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     // Default settings
     let settings: ISettings = {
       tocCaption: '## Table of Contents',
-      tocMaxLevel: 6
+      tocMaxLevel: 3
     };
 
     // Load settings if available
