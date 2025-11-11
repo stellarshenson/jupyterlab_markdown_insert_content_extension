@@ -39,7 +39,7 @@ interface ISettings {
  */
 function generateHeadingId(text: string): string {
   // Remove trailing pilcrow (¶) if present
-  let cleaned = text.replace(/¶+$/, '').trim();
+  const cleaned = text.replace(/¶+$/, '').trim();
 
   // Replace spaces with hyphens, preserving case and special characters
   return cleaned.replace(/\s+/g, '-');
@@ -219,8 +219,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
       'JupyterLab extension jupyterlab_markdown_insert_content_extension is activated!'
     );
 
-    // Default settings
-    let settings: ISettings = {
+    // Default settings (mutable to allow updates from settings registry)
+    const settings: ISettings = {
       tocCaption: '## Table of Contents',
       tocMaxLevel: 3
     };
