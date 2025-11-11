@@ -4,24 +4,14 @@
 
 ## 1.0.22
 
-### Features
-
-- Table of contents insertion with context menu integration for markdown files and notebook cells
-- Configurable TOC caption and maximum heading level through JupyterLab settings
-- Code block filtering - excludes headings within fenced code blocks from TOC
-- JupyterLab-compatible anchor ID generation preserving Title-Case and special characters
-- Cursor-aware insertion at current editor position
-- Dual mode support for file editors and notebook markdown cells
-
-### Settings
-
-- `tocCaption` - markdown content inserted before TOC (default: `## Table of Contents`)
-- `tocMaxLevel` - maximum heading level to include (1-6, default: 3)
-
-### Documentation
-
-- Comprehensive README with features, usage instructions, and screenshots
-- GitHub Actions workflows for CI/CD, testing, and release management
-- Complete package metadata (repository URL, homepage, bugs URL)
+- Implemented table of contents insertion with context menu integration
+- Added configurable settings for TOC caption and maximum heading level
+- Added code block filtering to exclude headings within fenced code blocks
+- Fixed anchor ID generation to match JupyterLab format (preserves Title-Case and special characters)
+- Changed default maximum heading level from 6 to 3
+- Updated README with badges, features section, and screenshots
+- Updated GitHub Actions workflows for CI/CD, testing, and release management
+- Fixed repository URL, homepage, and bugs URL in package.json
+- Fixed code formatting issues with Prettier and ESLint
 
 <!-- <END NEW CHANGELOG ENTRY> -->
