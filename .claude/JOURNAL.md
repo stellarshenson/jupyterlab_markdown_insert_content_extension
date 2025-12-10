@@ -48,3 +48,6 @@ This journal tracks substantive work on documents, diagrams, and documentation c
 
 15. **Task - Context menu selector fix for notebook cells**: Fixed menu item not appearing in notebook markdown cells by using correct CSS selector<br>
     **Result**: After multiple iterations testing various selectors (`.jp-Notebook .jp-Cell`, `.jp-Notebook .jp-MarkdownCell.jp-mod-editMode`), settled on `.jp-MarkdownCell .jp-InputArea-editor` which targets the editor area that only exists in edit mode. Simplified `isVisible` to always return true for notebooks since selector handles filtering. Version 1.0.37
+
+16. **Task - Release preparation v1.0.38**: Ran lint and prettier checks, built and attempted publish<br>
+    **Result**: Fixed package-lock.json formatting, version bumped to 1.0.38. npm publish failed due to expired access token - requires `npm login` before retry
