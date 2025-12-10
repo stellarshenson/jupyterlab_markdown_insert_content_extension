@@ -147,7 +147,7 @@ function insertTOCInFileEditor(
 }
 
 /**
- * Inserts TOC at cursor position in notebook cell
+ * Inserts TOC at cursor position in notebook cell (edit mode only)
  */
 function insertTOCInNotebook(
   notebookTracker: INotebookTracker,
@@ -170,6 +170,11 @@ function insertTOCInNotebook(
   const editor = activeCell.editor;
   const model = activeCell.model;
 
+  if (!editor) {
+    console.warn('No editor available - cell may not be in edit mode');
+    return;
+  }
+
   // Collect all markdown text from all markdown cells
   let allText = '';
   for (let i = 0; i < notebook.model!.cells.length; i++) {
@@ -190,9 +195,9 @@ function insertTOCInNotebook(
   // Generate TOC markdown
   const tocMarkdown = generateTOC(headings, settings.tocCaption);
 
-  // Insert at cursor position in active cell
-  const cursor = editor!.getCursorPosition();
-  const offset = editor!.getOffsetAt(cursor);
+  // Insert at cursor position
+  const cursor = editor.getCursorPosition();
+  const offset = editor.getOffsetAt(cursor);
   const currentText = model.sharedModel.getSource();
 
   model.sharedModel.setSource(
@@ -254,21 +259,19 @@ const plugin: JupyterFrontEndPlugin<void> = {
       label: 'Insert Table of Contents',
       caption: 'Insert a table of contents at the cursor position',
       isVisible: () => {
-        // Check if we're in a markdown file editor
+        // For file editor - check if it's a markdown file
         if (editorTracker?.currentWidget) {
           const path = editorTracker.currentWidget.context.path;
           if (path.endsWith('.md') || path.endsWith('.markdown')) {
             return true;
           }
         }
-        // Check if we're in a markdown cell in edit mode
+
+        // For notebooks - always visible (selector filters to edit mode)
         if (notebookTracker?.currentWidget) {
-          const activeCell = notebookTracker.currentWidget.content.activeCell;
-          if (activeCell && activeCell.model.type === 'markdown') {
-            // Check if cell is in edit mode
-            return activeCell.node.classList.contains('jp-mod-editMode');
-          }
+          return true;
         }
+
         return false;
       },
       execute: () => {
@@ -314,11 +317,11 @@ const plugin: JupyterFrontEndPlugin<void> = {
       });
     }
 
-    // Add to notebook context menu - for markdown cells (isVisible filters to edit mode)
+    // Add to notebook context menu - for markdown cells
     if (notebookTracker) {
       app.contextMenu.addItem({
         command: CommandIDs.insertTOC,
-        selector: '.jp-Notebook .jp-Cell',
+        selector: '.jp-MarkdownCell .jp-InputArea-editor',
         rank: 10
       });
     }

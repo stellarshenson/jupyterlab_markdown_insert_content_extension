@@ -45,3 +45,6 @@ This journal tracks substantive work on documents, diagrams, and documentation c
 
 14. **Task - Notebook cell execute fix**: Fixed TOC insertion failing in notebook markdown cells due to edit mode check in execute function<br>
     **Result**: Removed `jp-mod-editMode` class check from execute function since cell exits edit mode when context menu is clicked. The isVisible function already validates edit mode when showing the menu item, so execute only needs to verify active cell is markdown type. Version 1.0.31
+
+15. **Task - Context menu selector fix for notebook cells**: Fixed menu item not appearing in notebook markdown cells by using correct CSS selector<br>
+    **Result**: After multiple iterations testing various selectors (`.jp-Notebook .jp-Cell`, `.jp-Notebook .jp-MarkdownCell.jp-mod-editMode`), settled on `.jp-MarkdownCell .jp-InputArea-editor` which targets the editor area that only exists in edit mode. Simplified `isVisible` to always return true for notebooks since selector handles filtering. Version 1.0.37
