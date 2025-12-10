@@ -42,3 +42,6 @@ This journal tracks substantive work on documents, diagrams, and documentation c
 
 13. **Task - Default TOC caption update**: Changed default TOC caption from HTML h2 to bold markdown<br>
     **Result**: Updated both src/index.ts and schema/plugin.json defaults from `<h2>Table of Contents</h2>` to `**Table of Contents**` for cleaner markdown output that doesn't create a heading entry
+
+14. **Task - Notebook cell execute fix**: Fixed TOC insertion failing in notebook markdown cells due to edit mode check in execute function<br>
+    **Result**: Removed `jp-mod-editMode` class check from execute function since cell exits edit mode when context menu is clicked. The isVisible function already validates edit mode when showing the menu item, so execute only needs to verify active cell is markdown type. Version 1.0.31

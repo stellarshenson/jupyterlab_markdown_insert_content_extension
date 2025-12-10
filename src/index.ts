@@ -281,11 +281,9 @@ const plugin: JupyterFrontEndPlugin<void> = {
           currentWidget === notebookTracker.currentWidget
         ) {
           const activeCell = notebookTracker.currentWidget.content.activeCell;
-          if (
-            activeCell &&
-            activeCell.model.type === 'markdown' &&
-            activeCell.node.classList.contains('jp-mod-editMode')
-          ) {
+          // Only check for markdown cell type - edit mode was verified by isVisible
+          // (cell may exit edit mode when context menu is clicked)
+          if (activeCell && activeCell.model.type === 'markdown') {
             insertTOCInNotebook(notebookTracker, settings);
             return;
           }
