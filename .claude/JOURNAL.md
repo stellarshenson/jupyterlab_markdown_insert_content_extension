@@ -33,3 +33,12 @@ This journal tracks substantive work on documents, diagrams, and documentation c
 
 10. **Task - GitHub Actions workflow update**: Replaced default workflow files with production-ready configurations from jupyterlab_markdown_viewer_toc_fix reference implementation<br>
     **Result**: Created six workflow files - build.yml (CI with lint, test, build, package, isolated test, and integration tests), check-release.yml (release validation), enforce-label.yml (PR label enforcement), prep-release.yml (manual release preparation), publish-release.yml (two-step release publishing with npm/PyPI), and update-integration-tests.yml (Playwright snapshot updates via PR comments) with proper package naming jupyterlab_markdown_insert_content_extension throughout
+
+11. **Task - Context menu visibility fix**: Fixed context menu to only appear in appropriate editing contexts - markdown files and notebook markdown cells in edit mode<br>
+    **Result**: Implemented `isVisible` function checking file extension (.md, .markdown) for file editors and `jp-mod-editMode` class for notebook cells. Updated selectors from overly specific (`.jp-FileEditor .jp-FileEditorCodeWrapper`, `.jp-Notebook .jp-MarkdownCell.jp-mod-editMode .jp-InputArea-editor`) to broader selectors (`.jp-FileEditor`, `.jp-Notebook .jp-Cell`) with visibility filtering. Removed `document.activeElement` check that caused menu item to disappear on mouse hover
+
+12. **Task - Execute function context detection fix**: Fixed TOC insertion to correctly detect active context (file editor vs notebook) using shell.currentWidget comparison<br>
+    **Result**: Rewrote execute function to check `app.shell.currentWidget` against tracker widgets, testing notebook first then file editor. Ensures correct insertion target when both file editors and notebooks are open simultaneously. Version bumped through 1.0.25-1.0.30 during iterative fixes
+
+13. **Task - Default TOC caption update**: Changed default TOC caption from HTML h2 to bold markdown<br>
+    **Result**: Updated both src/index.ts and schema/plugin.json defaults from `<h2>Table of Contents</h2>` to `**Table of Contents**` for cleaner markdown output that doesn't create a heading entry

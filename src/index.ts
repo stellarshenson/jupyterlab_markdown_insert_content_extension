@@ -221,7 +221,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
     // Default settings (mutable to allow updates from settings registry)
     const settings: ISettings = {
-      tocCaption: '## Table of Contents',
+      tocCaption: '**Table of Contents**',
       tocMaxLevel: 3
     };
 
@@ -253,19 +253,61 @@ const plugin: JupyterFrontEndPlugin<void> = {
     app.commands.addCommand(CommandIDs.insertTOC, {
       label: 'Insert Table of Contents',
       caption: 'Insert a table of contents at the cursor position',
-      execute: () => {
-        // Try notebook first, then file editor
-        if (notebookTracker?.currentWidget) {
-          insertTOCInNotebook(notebookTracker, settings);
-        } else if (editorTracker?.currentWidget) {
-          insertTOCInFileEditor(editorTracker, settings);
-        } else {
-          console.warn('No active markdown editor or notebook');
+      isVisible: () => {
+        // Check if we're in a markdown file editor
+        if (editorTracker?.currentWidget) {
+          const path = editorTracker.currentWidget.context.path;
+          if (path.endsWith('.md') || path.endsWith('.markdown')) {
+            return true;
+          }
         }
+        // Check if we're in a markdown cell in edit mode
+        if (notebookTracker?.currentWidget) {
+          const activeCell = notebookTracker.currentWidget.content.activeCell;
+          if (activeCell && activeCell.model.type === 'markdown') {
+            // Check if cell is in edit mode
+            return activeCell.node.classList.contains('jp-mod-editMode');
+          }
+        }
+        return false;
+      },
+      execute: () => {
+        // Check current shell widget to determine context
+        const currentWidget = app.shell.currentWidget;
+
+        // Check if current widget is a notebook
+        if (
+          notebookTracker?.currentWidget &&
+          currentWidget === notebookTracker.currentWidget
+        ) {
+          const activeCell = notebookTracker.currentWidget.content.activeCell;
+          if (
+            activeCell &&
+            activeCell.model.type === 'markdown' &&
+            activeCell.node.classList.contains('jp-mod-editMode')
+          ) {
+            insertTOCInNotebook(notebookTracker, settings);
+            return;
+          }
+        }
+
+        // Check if current widget is a file editor with markdown
+        if (
+          editorTracker?.currentWidget &&
+          currentWidget === editorTracker.currentWidget
+        ) {
+          const path = editorTracker.currentWidget.context.path;
+          if (path.endsWith('.md') || path.endsWith('.markdown')) {
+            insertTOCInFileEditor(editorTracker, settings);
+            return;
+          }
+        }
+
+        console.warn('No active markdown editor or notebook cell in edit mode');
       }
     });
 
-    // Add to editor context menu
+    // Add to editor context menu - for file editors (isVisible filters to markdown)
     if (editorTracker) {
       app.contextMenu.addItem({
         command: CommandIDs.insertTOC,
@@ -274,11 +316,11 @@ const plugin: JupyterFrontEndPlugin<void> = {
       });
     }
 
-    // Add to notebook context menu
+    // Add to notebook context menu - for markdown cells (isVisible filters to edit mode)
     if (notebookTracker) {
       app.contextMenu.addItem({
         command: CommandIDs.insertTOC,
-        selector: '.jp-Notebook .jp-MarkdownCell',
+        selector: '.jp-Notebook .jp-Cell',
         rank: 10
       });
     }
