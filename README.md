@@ -8,19 +8,6 @@
 
 JupyterLab extension for inserting reusable content blocks into markdown files and notebook cells, starting with automatic table of contents generation.
 
-## Features
-
-- **Context menu integration** - right-click in markdown editors or notebook cells to access all tools via "Markdown Tools" submenu
-- **Table of contents generation** - automatically extracts headings and creates hierarchical TOC with working anchor links
-- **TOC update support** - regenerates existing TOC in place using markers (`<!-- TOC:BEGIN -->` and `<!-- TOC:END -->`)
-- **Hierarchical heading numbering** - add, remove, or update numbering on headings (1., 1.1., 1.1.2., etc.)
-- **Configurable settings** - customize TOC caption, maximum heading depth, numbering depth, and trailing dot style
-- **Code block filtering** - excludes headings within fenced code blocks from TOC and numbering
-- **JupyterLab-compatible anchors** - generates anchor IDs matching JupyterLab's format for reliable navigation
-- **Dual mode support** - works in both markdown file editors and notebook markdown cells
-- **Cursor-aware insertion** - inserts content at current cursor position
-- **Automatic TOC updates** - TOC is updated automatically when heading numbering changes
-
 Right-click in markdown editor or notebook cell to access the context menu:
 
 ![](.resources/screenshot-menu.png)
@@ -32,6 +19,20 @@ Generated table of contents with hierarchical structure and working anchor links
 Configure TOC caption and maximum heading level through JupyterLab settings:
 
 ![](.resources/screenshot-settings.png)
+
+## Features
+
+- **Context menu integration** - right-click in markdown editors or notebook cells to access all tools via "Markdown Tools" submenu
+- **Table of contents generation** - automatically extracts headings and creates hierarchical TOC with working anchor links
+- **TOC update support** - regenerates existing TOC in place using markers (`<!-- TOC:BEGIN -->` and `<!-- TOC:END -->`)
+- **Heading exclusion** - mark headings with `<!-- TOC:IGNORE -->` to exclude from TOC while preserving numbering
+- **Hierarchical heading numbering** - add, remove, or update numbering on headings (1., 1.1., 1.1.2., etc.)
+- **Configurable settings** - customize TOC caption, maximum heading depth, numbering depth, and trailing dot style
+- **Code block filtering** - excludes headings within fenced code blocks from TOC and numbering
+- **JupyterLab-compatible anchors** - generates anchor IDs matching JupyterLab's format for reliable navigation
+- **Dual mode support** - works in both markdown file editors and notebook markdown cells
+- **Cursor-aware insertion** - inserts content at current cursor position
+- **Automatic TOC updates** - TOC is updated automatically when heading numbering changes
 
 ## Requirements
 
