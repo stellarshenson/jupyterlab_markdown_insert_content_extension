@@ -815,8 +815,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
     const settings: ISettings = {
       tocCaption: '**Table of Contents**',
       tocMaxLevel: 3,
-      numberingMaxLevel: 3,
-      numberingTrailingDot: true
+      numberingMaxLevel: 5,
+      numberingTrailingDot: false
     };
 
     // Load settings if available
