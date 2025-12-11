@@ -2,7 +2,7 @@
 # author: Stellars Henson <konrad.jelen@gmail.com>
 # License: MIT Open Source License
 
-.PHONY: build install clean uninstall publish dependencies mrproper increment_version install_dependencies check_dependencies upgrade help
+.PHONY: build install clean uninstall publish dependencies mrproper increment_version install_dependencies install_test_dependencies integration_test check_dependencies upgrade help
 .DEFAULT_GOAL := help
 
 # Read current version from package.json (only if node is available)
@@ -64,6 +64,16 @@ install_dependencies:
 	conda install -y nodejs yarn --update-all
 	pip install twine
 	npm install rimraf
+
+## install integration test dependencies (Playwright)
+install_test_dependencies:
+	cd ui-tests && jlpm install
+	cd ui-tests && jlpm playwright install chromium
+	cd ui-tests && jlpm playwright install-deps chromium
+
+## run integration tests
+integration_test: install_test_dependencies
+	cd ui-tests && jlpm playwright test
 
 ## upgrade all npm and yarn dependencies
 upgrade: check_dependencies
