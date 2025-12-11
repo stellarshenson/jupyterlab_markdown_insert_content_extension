@@ -280,14 +280,22 @@ function removeNumberingFromText(text: string): string {
 }
 
 /**
+ * Marker to exclude heading from TOC (heading will still be numbered)
+ */
+const NO_TOC_MARKER = '<!-- TOC:IGNORE -->';
+
+/**
  * Extracts headings from markdown text, excluding headings in code blocks
+ * and headings marked with <!-- TOC:IGNORE -->
  */
 function extractHeadings(text: string, maxLevel: number): IHeading[] {
   const headings: IHeading[] = [];
   const lines = text.split('\n');
   let inCodeBlock = false;
 
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
     // Check for code block delimiters (``` or ~~~)
     if (line.match(/^```/) || line.match(/^~~~/)) {
       inCodeBlock = !inCodeBlock;
@@ -299,7 +307,7 @@ function extractHeadings(text: string, maxLevel: number): IHeading[] {
       continue;
     }
 
-    // Match ATX-style headings (# Heading)
+    // Match ATX-style headings (# Heading) - may have <!-- notoc --> at end
     const match = line.match(/^(#{1,6})\s+(.+)$/);
     if (match) {
       const level = match[1].length;
@@ -309,11 +317,28 @@ function extractHeadings(text: string, maxLevel: number): IHeading[] {
         continue;
       }
 
-      const text = match[2].trim();
-      const id = generateHeadingId(text);
+      let headingText = match[2].trim();
+
+      // Check if heading has notoc marker (inline or on next line)
+      const hasInlineNotoc = headingText.includes(NO_TOC_MARKER);
+      const nextLine = i + 1 < lines.length ? lines[i + 1] : '';
+      const hasNextLineNotoc = nextLine.trim() === NO_TOC_MARKER;
+
+      if (hasInlineNotoc || hasNextLineNotoc) {
+        // Skip this heading in TOC, but don't skip the line for numbering
+        if (hasNextLineNotoc) {
+          i++; // Skip the notoc marker line
+        }
+        continue;
+      }
+
+      // Remove any inline comments for clean text
+      headingText = headingText.replace(/<!--.*?-->/g, '').trim();
+
+      const id = generateHeadingId(headingText);
 
       headings.push({
-        text: text,
+        text: headingText,
         level: level,
         id: id
       });
@@ -359,10 +384,11 @@ function findAndReplaceTOC(text: string, newTOC: string): string | null {
   const before = text.slice(0, beginIndex);
   const after = text.slice(endIndex + TOC_END_MARKER.length);
 
-  // Remove leading/trailing newlines from after to avoid double spacing
-  const trimmedAfter = after.replace(/^\n+/, '\n');
+  // New TOC already ends with TOC_END_MARKER + \n\n, trim the trailing \n\n
+  // and preserve whatever whitespace was after the original END marker
+  const newTOCTrimmed = newTOC.replace(/\n+$/, '');
 
-  return before + newTOC.replace(/\s+$/, '') + trimmedAfter;
+  return before + newTOCTrimmed + after;
 }
 
 /**
