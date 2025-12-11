@@ -10,13 +10,16 @@ JupyterLab extension for inserting reusable content blocks into markdown files a
 
 ## Features
 
-- **Context menu integration** - right-click in markdown editors or notebook cells to insert content
+- **Context menu integration** - right-click in markdown editors or notebook cells to access all tools via "Markdown Tools" submenu
 - **Table of contents generation** - automatically extracts headings and creates hierarchical TOC with working anchor links
-- **Configurable settings** - customize TOC caption and maximum heading depth through JupyterLab settings
-- **Code block filtering** - excludes headings within fenced code blocks from TOC
+- **TOC update support** - regenerates existing TOC in place using markers (`<!-- TOC:BEGIN -->` and `<!-- TOC:END -->`)
+- **Hierarchical heading numbering** - add, remove, or update numbering on headings (1., 1.1., 1.1.2., etc.)
+- **Configurable settings** - customize TOC caption, maximum heading depth, numbering depth, and trailing dot style
+- **Code block filtering** - excludes headings within fenced code blocks from TOC and numbering
 - **JupyterLab-compatible anchors** - generates anchor IDs matching JupyterLab's format for reliable navigation
 - **Dual mode support** - works in both markdown file editors and notebook markdown cells
 - **Cursor-aware insertion** - inserts content at current cursor position
+- **Automatic TOC updates** - TOC is updated automatically when heading numbering changes
 
 Right-click in markdown editor or notebook cell to access the context menu:
 
@@ -42,19 +45,36 @@ pip install jupyterlab_markdown_insert_content_extension
 
 ## Usage
 
-### Insert Table of Contents
+### Table of Contents
 
 1. Open a markdown file or create a markdown cell in a notebook
 2. Position cursor where you want the TOC inserted
-3. Right-click and select "Insert Table of Contents"
-4. TOC is generated with links to all headings in the document
+3. Right-click and select **Markdown Tools > Insert Table of Contents**
+4. TOC is generated with markers for future updates
+
+To update an existing TOC:
+- Right-click and select **Markdown Tools > Update Table of Contents**
+- The TOC between markers will be regenerated
+
+### Heading Numbering
+
+Add hierarchical numbering to your headings:
+
+1. Right-click and select **Markdown Tools > Add Heading Numbering**
+2. Headings become numbered: `# Introduction` -> `# 1. Introduction`
+
+Other numbering commands:
+- **Remove Heading Numbering** - strips all numbering from headings
+- **Update Heading Numbering** - recalculates numbering and updates TOC
 
 ### Configure Settings
 
 Access settings through Settings -> Settings Editor -> Markdown Insert Content:
 
-- **TOC Caption** - markdown content inserted before TOC list (default: `## Table of Contents`)
-- **Maximum Heading Level** - deepest heading level to include (1-6, default: 3)
+- **TOC Caption** - markdown content inserted before TOC list (default: `**Table of Contents**`)
+- **Maximum TOC Heading Level** - deepest heading level to include in TOC (1-6, default: 3)
+- **Maximum Numbering Level** - deepest heading level to number (1-6, default: 3)
+- **Trailing Dot in Numbering** - add trailing dot after numbers (default: enabled, e.g., `1.2.` vs `1.2`)
 
 Settings apply immediately without restart.
 

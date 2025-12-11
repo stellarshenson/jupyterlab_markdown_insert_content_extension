@@ -51,3 +51,6 @@ This journal tracks substantive work on documents, diagrams, and documentation c
 
 16. **Task - Release preparation v1.0.38**: Ran lint and prettier checks, built and attempted publish<br>
     **Result**: Fixed package-lock.json formatting, version bumped to 1.0.38. npm publish failed due to expired access token - requires `npm login` before retry
+
+17. **Task - Hierarchical heading numbering feature** (v1.1.0): Implemented comprehensive heading numbering system with TOC integration<br>
+    **Result**: Added five new commands (Add/Remove/Update Heading Numbering, Update TOC) plus settings for numberingMaxLevel and numberingTrailingDot. Core implementation includes `generateNumbering()`, `addNumberingToText()`, `removeNumberingFromText()` functions with two-pass processing - first pass numbers headings and collects mappings, second pass updates TOC links. Numbering follows pattern "1.", "1.1.", "1.1.1." with configurable trailing dot (default: enabled). TOC generation now wraps content in `<!-- TOC:BEGIN -->` and `<!-- TOC:END -->` markers enabling Update TOC command. Update Numbering automatically regenerates TOC when markers present. Context menu reorganized into "Markdown Tools" submenu using @lumino/widgets Menu class. Updated README with new features and usage instructions. Version 1.1.1

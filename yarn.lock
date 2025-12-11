@@ -2101,8 +2101,8 @@ __metadata:
   linkType: hard
 
 "@jupyter/ydoc@npm:^3.1.0":
-  version: 3.3.2
-  resolution: "@jupyter/ydoc@npm:3.3.2"
+  version: 3.3.3
+  resolution: "@jupyter/ydoc@npm:3.3.3"
   dependencies:
     "@jupyterlab/nbformat": "npm:^3.0.0 || ^4.0.0-alpha.21 || ^4.0.0"
     "@lumino/coreutils": "npm:^1.11.0 || ^2.0.0"
@@ -2110,7 +2110,7 @@ __metadata:
     "@lumino/signaling": "npm:^1.10.0 || ^2.0.0"
     y-protocols: "npm:^1.0.5"
     yjs: "npm:^13.5.40"
-  checksum: 3b9cf9dafc966aef6bab283cc26314222eb9e8395b48e15dc4e63675af5420482657d5fd78e52c928acdd0d40dd3d15683e3a59b8e52c2b52f883cccb01f1362
+  checksum: c34231f7bb13166774c7e5ee9474e07b9fcac0ca2028ee02cf2582343c3eef4bd7cfea8b87728e7c420f9ca2edb73cade71e188dbede14a8db645192ddde8a37
   languageName: node
   linkType: hard
 
@@ -3728,11 +3728,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*":
-  version: 24.10.2
-  resolution: "@types/node@npm:24.10.2"
+  version: 25.0.0
+  resolution: "@types/node@npm:25.0.0"
   dependencies:
     undici-types: "npm:~7.16.0"
-  checksum: 9a306c959ab3cc9fb7e094062da5659aa8be600cbe8a067ce6a9b2b9f4a8dc1332fa612e68da91f1aa1e9e56d1adcb89df784fc9736297c6d0a5890bf99f92a2
+  checksum: 42f69ea82cacd3ee2f1824e52f156398720b94d968ae75db16293c1c441d305976183eb338f5e778c68e157451118a9d60b81af3f1ea9cedf761bd34b1942b96
   languageName: node
   linkType: hard
 
@@ -4556,11 +4556,11 @@ __metadata:
   linkType: hard
 
 "baseline-browser-mapping@npm:^2.9.0":
-  version: 2.9.5
-  resolution: "baseline-browser-mapping@npm:2.9.5"
+  version: 2.9.6
+  resolution: "baseline-browser-mapping@npm:2.9.6"
   bin:
     baseline-browser-mapping: dist/cli.js
-  checksum: 1390acbd846a62571f8f76c121099b069093953300610f54dcbfac285df9d658c735ffd109c86f37ffde6829e1e0940d75093c777293ab065f7f7e25abbd8ba4
+  checksum: af9de49ebf8fedb33cbbe3a0558dbe5d86acbf8ff0912d2202bba662a3787cf4b1cf2040393c7ad0509e3e53e2e40f96bc572c038043c4f05681cd52157e6369
   languageName: node
   linkType: hard
 

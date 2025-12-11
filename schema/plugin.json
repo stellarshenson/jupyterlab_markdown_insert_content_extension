@@ -13,11 +13,25 @@
     },
     "tocMaxLevel": {
       "type": "number",
-      "title": "Maximum Heading Level",
+      "title": "Maximum TOC Heading Level",
       "description": "Maximum heading level to include in TOC (1-6, where 1=h1, 2=h2, etc.)",
       "default": 3,
       "minimum": 1,
       "maximum": 6
+    },
+    "numberingMaxLevel": {
+      "type": "number",
+      "title": "Maximum Numbering Level",
+      "description": "Maximum heading level to apply hierarchical numbering (1-6, where 1=h1, 2=h2, etc.)",
+      "default": 3,
+      "minimum": 1,
+      "maximum": 6
+    },
+    "numberingTrailingDot": {
+      "type": "boolean",
+      "title": "Trailing Dot in Numbering",
+      "description": "Add trailing dot after heading numbers (e.g., '1.2.' vs '1.2')",
+      "default": true
     }
   },
   "additionalProperties": false
