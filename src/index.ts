@@ -13,6 +13,7 @@ import { Menu } from '@lumino/widgets';
 namespace CommandIDs {
   export const insertTOC = 'markdown-insert:insert-toc';
   export const updateTOC = 'markdown-insert:update-toc';
+  export const toggleTOCIgnore = 'markdown-insert:toggle-toc-ignore';
   export const addNumbering = 'markdown-insert:add-numbering';
   export const removeNumbering = 'markdown-insert:remove-numbering';
   export const updateNumbering = 'markdown-insert:update-numbering';
@@ -690,6 +691,108 @@ function updateTOCInNotebook(
 }
 
 /**
+ * Toggles TOC:IGNORE marker on the heading at cursor position in file editor
+ */
+function toggleTOCIgnoreInFileEditor(editorTracker: IEditorTracker): void {
+  const widget = editorTracker.currentWidget;
+  if (!widget) {
+    console.warn('No active file editor');
+    return;
+  }
+
+  const editor = widget.content.editor;
+  const model = widget.content.model;
+  const cursor = editor.getCursorPosition();
+  const text = model.sharedModel.getSource();
+  const lines = text.split('\n');
+
+  // Get current line
+  const lineIndex = cursor.line;
+  if (lineIndex >= lines.length) {
+    return;
+  }
+
+  const line = lines[lineIndex];
+
+  // Check if line is a heading
+  if (!line.match(/^#{1,6}\s+/)) {
+    console.warn('Current line is not a heading');
+    return;
+  }
+
+  // Toggle the marker
+  if (line.includes(NO_TOC_MARKER)) {
+    // Remove marker
+    lines[lineIndex] = line
+      .replace(` ${NO_TOC_MARKER}`, '')
+      .replace(NO_TOC_MARKER, '');
+  } else {
+    // Add marker at end of line
+    lines[lineIndex] = `${line} ${NO_TOC_MARKER}`;
+  }
+
+  model.sharedModel.setSource(lines.join('\n'));
+}
+
+/**
+ * Toggles TOC:IGNORE marker on the heading at cursor position in notebook cell
+ */
+function toggleTOCIgnoreInNotebook(notebookTracker: INotebookTracker): void {
+  const panel = notebookTracker.currentWidget;
+  if (!panel) {
+    console.warn('No active notebook');
+    return;
+  }
+
+  const notebook = panel.content;
+  const activeCell = notebook.activeCell;
+
+  if (!activeCell || activeCell.model.type !== 'markdown') {
+    console.warn('Active cell is not a markdown cell');
+    return;
+  }
+
+  const editor = activeCell.editor;
+  const model = activeCell.model;
+
+  if (!editor) {
+    console.warn('No editor available');
+    return;
+  }
+
+  const cursor = editor.getCursorPosition();
+  const text = model.sharedModel.getSource();
+  const lines = text.split('\n');
+
+  // Get current line
+  const lineIndex = cursor.line;
+  if (lineIndex >= lines.length) {
+    return;
+  }
+
+  const line = lines[lineIndex];
+
+  // Check if line is a heading
+  if (!line.match(/^#{1,6}\s+/)) {
+    console.warn('Current line is not a heading');
+    return;
+  }
+
+  // Toggle the marker
+  if (line.includes(NO_TOC_MARKER)) {
+    // Remove marker
+    lines[lineIndex] = line
+      .replace(` ${NO_TOC_MARKER}`, '')
+      .replace(NO_TOC_MARKER, '');
+  } else {
+    // Add marker at end of line
+    lines[lineIndex] = `${line} ${NO_TOC_MARKER}`;
+  }
+
+  model.sharedModel.setSource(lines.join('\n'));
+}
+
+/**
  * Initialization data for the jupyterlab_markdown_insert_content_extension extension.
  */
 const plugin: JupyterFrontEndPlugin<void> = {
@@ -839,6 +942,54 @@ const plugin: JupyterFrontEndPlugin<void> = {
           const path = editorTracker.currentWidget.context.path;
           if (path.endsWith('.md') || path.endsWith('.markdown')) {
             updateTOCInFileEditor(editorTracker, settings);
+            return;
+          }
+        }
+
+        console.warn('No active markdown editor or notebook');
+      }
+    });
+
+    // Register command to toggle TOC ignore on heading
+    app.commands.addCommand(CommandIDs.toggleTOCIgnore, {
+      label: 'Toggle Exclude from TOC',
+      caption: 'Toggle TOC:IGNORE marker on the heading at cursor position',
+      isVisible: () => {
+        // For file editor - check if it's a markdown file
+        if (editorTracker?.currentWidget) {
+          const path = editorTracker.currentWidget.context.path;
+          if (path.endsWith('.md') || path.endsWith('.markdown')) {
+            return true;
+          }
+        }
+
+        // For notebooks - always visible (selector filters to edit mode)
+        if (notebookTracker?.currentWidget) {
+          return true;
+        }
+
+        return false;
+      },
+      execute: () => {
+        const currentWidget = app.shell.currentWidget;
+
+        // Check if current widget is a notebook
+        if (
+          notebookTracker?.currentWidget &&
+          currentWidget === notebookTracker.currentWidget
+        ) {
+          toggleTOCIgnoreInNotebook(notebookTracker);
+          return;
+        }
+
+        // Check if current widget is a file editor with markdown
+        if (
+          editorTracker?.currentWidget &&
+          currentWidget === editorTracker.currentWidget
+        ) {
+          const path = editorTracker.currentWidget.context.path;
+          if (path.endsWith('.md') || path.endsWith('.markdown')) {
+            toggleTOCIgnoreInFileEditor(editorTracker);
             return;
           }
         }
@@ -1008,6 +1159,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     // Add commands to submenu
     submenu.addItem({ command: CommandIDs.insertTOC });
     submenu.addItem({ command: CommandIDs.updateTOC });
+    submenu.addItem({ command: CommandIDs.toggleTOCIgnore });
     submenu.addItem({ type: 'separator' });
     submenu.addItem({ command: CommandIDs.addNumbering });
     submenu.addItem({ command: CommandIDs.removeNumbering });

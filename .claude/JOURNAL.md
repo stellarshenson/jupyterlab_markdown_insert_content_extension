@@ -57,3 +57,6 @@ This journal tracks substantive work on documents, diagrams, and documentation c
 
 18. **Task - TOC exclusion and whitespace fixes** (v1.1.5): Added heading exclusion marker and fixed TOC update whitespace handling<br>
     **Result**: Added `<!-- TOC:IGNORE -->` marker to exclude specific headings from TOC while preserving numbering. Marker can be placed inline after heading or on the next line. Fixed `findAndReplaceTOC()` function to preserve original whitespace after `<!-- TOC:END -->` marker instead of collapsing newlines. Updated `extractHeadings()` to check for inline and next-line ignore markers, skip matched headings from TOC output, and strip any inline HTML comments from heading text for clean TOC entries. Version 1.1.5
+
+19. **Task - Toggle TOC ignore menu item** (v1.1.6): Added context menu command to toggle TOC:IGNORE marker on heading at cursor<br>
+    **Result**: Added `toggleTOCIgnore` command with "Toggle Exclude from TOC" label in Markdown Tools submenu. Implemented `toggleTOCIgnoreInFileEditor()` and `toggleTOCIgnoreInNotebook()` functions that detect if cursor is on a heading line, then add or remove the `<!-- TOC:IGNORE -->` marker. If marker present, removes it; if absent, appends it to end of heading line. Works in both markdown file editors and notebook markdown cells. Version 1.1.6
