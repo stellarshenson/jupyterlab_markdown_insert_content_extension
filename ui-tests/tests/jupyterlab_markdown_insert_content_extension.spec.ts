@@ -257,15 +257,15 @@ test.describe('Heading Numbering', () => {
       return editor?.textContent || '';
     });
 
-    // Check numbering is added (with trailing dot by default)
-    expect(content).toContain('# 1. Project Overview');
-    expect(content).toContain('## 1.1. Introduction');
-    expect(content).toContain('### 1.1.1. Background');
-    expect(content).toContain('### 1.1.2. Motivation');
-    expect(content).toContain('## 1.2. Implementation');
-    expect(content).toContain('### 1.2.1. Architecture');
-    expect(content).toContain('### 1.2.2. Testing');
-    expect(content).toContain('## 1.3. Conclusion');
+    // Check numbering is added (no trailing dot by default)
+    expect(content).toContain('# 1 Project Overview');
+    expect(content).toContain('## 1.1 Introduction');
+    expect(content).toContain('### 1.1.1 Background');
+    expect(content).toContain('### 1.1.2 Motivation');
+    expect(content).toContain('## 1.2 Implementation');
+    expect(content).toContain('### 1.2.1 Architecture');
+    expect(content).toContain('### 1.2.2 Testing');
+    expect(content).toContain('## 1.3 Conclusion');
   });
 
   test('should remove numbering from headings', async ({ page }) => {
@@ -337,10 +337,10 @@ test.describe('Heading Numbering', () => {
       return editor?.textContent || '';
     });
 
-    // Headings should be numbered
-    expect(content).toContain('# 1. First');
-    expect(content).toContain('## 1.1. Sub First');
-    expect(content).toContain('# 2. Second');
+    // Headings should be numbered (no trailing dot by default)
+    expect(content).toContain('# 1 First');
+    expect(content).toContain('## 1.1 Sub First');
+    expect(content).toContain('# 2 Second');
   });
 });
 
@@ -473,10 +473,10 @@ Some content.
       return editor?.textContent || '';
     });
 
-    // All headings should be numbered including the ignored one
-    expect(content).toContain('# 1. First Heading');
-    expect(content).toContain('## 1.1. Second Heading');
-    expect(content).toContain('## 1.2. Third Heading');
+    // All headings should be numbered including the ignored one (no trailing dot by default)
+    expect(content).toContain('# 1 First Heading');
+    expect(content).toContain('## 1.1 Second Heading');
+    expect(content).toContain('## 1.2 Third Heading');
   });
 });
 
@@ -538,10 +538,10 @@ test.describe('Feature Interactions', () => {
       return editor?.textContent || '';
     });
 
-    // Headings should be numbered
-    expect(content).toContain('# 1. Introduction');
-    expect(content).toContain('# 2. Methods');
-    expect(content).toContain('# 3. Results');
+    // Headings should be numbered (no trailing dot by default)
+    expect(content).toContain('# 1 Introduction');
+    expect(content).toContain('# 2 Methods');
+    expect(content).toContain('# 3 Results');
 
     // Step 3: Update TOC to reflect numbering
     await editor.click({ button: 'right' });
@@ -554,13 +554,13 @@ test.describe('Feature Interactions', () => {
       return editor?.textContent || '';
     });
 
-    // TOC should now have numbered links
-    expect(content).toContain('[1. Introduction]');
-    expect(content).toContain('[2. Methods]');
-    expect(content).toContain('[3. Results]');
+    // TOC should now have numbered links (no trailing dot)
+    expect(content).toContain('[1 Introduction]');
+    expect(content).toContain('[2 Methods]');
+    expect(content).toContain('[3 Results]');
   });
 
-  test('numbering respects maxLevel setting (default 3)', async ({ page }) => {
+  test('numbering respects maxLevel setting (default 5)', async ({ page }) => {
     const deepMarkdown = `# Level 1
 
 ## Level 2
@@ -570,6 +570,8 @@ test.describe('Feature Interactions', () => {
 #### Level 4
 
 ##### Level 5
+
+###### Level 6
 `;
 
     await page.menu.clickMenuItem('File>New>Markdown File');
@@ -591,15 +593,16 @@ test.describe('Feature Interactions', () => {
       return editor?.textContent || '';
     });
 
-    // Levels 1-3 should be numbered (default maxLevel is 3)
-    expect(content).toContain('# 1. Level 1');
-    expect(content).toContain('## 1.1. Level 2');
-    expect(content).toContain('### 1.1.1. Level 3');
+    // Levels 1-5 should be numbered (default maxLevel is 5, no trailing dot)
+    expect(content).toContain('# 1 Level 1');
+    expect(content).toContain('## 1.1 Level 2');
+    expect(content).toContain('### 1.1.1 Level 3');
+    expect(content).toContain('#### 1.1.1.1 Level 4');
+    expect(content).toContain('##### 1.1.1.1.1 Level 5');
 
-    // Levels 4+ should NOT be numbered
-    expect(content).toContain('#### Level 4');
-    expect(content).toContain('##### Level 5');
-    expect(content).not.toContain('1.1.1.1.');
+    // Level 6 should NOT be numbered
+    expect(content).toContain('###### Level 6');
+    expect(content).not.toContain('1.1.1.1.1.1');
   });
 
   test('whitespace after TOC:END is preserved during update', async ({

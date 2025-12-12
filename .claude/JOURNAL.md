@@ -66,3 +66,6 @@ This journal tracks substantive work on documents, diagrams, and documentation c
 
 21. **Task - Settings defaults update** (v1.1.11): Changed default numbering settings for broader coverage<br>
     **Result**: Updated `numberingMaxLevel` default from 3 to 5 to apply numbering up to H5 headings. Changed `numberingTrailingDot` default from true to false for cleaner numbering format (1.1 vs 1.1.). Both schema/plugin.json and src/index.ts updated. Published to npm and PyPI
+
+22. **Task - Integration test fixes** (v1.1.12): Updated Playwright tests to match new default settings<br>
+    **Result**: Fixed 5 failing tests in `ui-tests/tests/jupyterlab_markdown_insert_content_extension.spec.ts` by updating assertions to match `numberingTrailingDot: false` default (e.g., `'# 1 First'` instead of `'# 1. First'`). Updated maxLevel test from level 3 to level 5 default, now testing all 6 heading levels with assertions that H1-H5 get numbered and H6 remains unnumbered
