@@ -21,9 +21,20 @@ namespace CommandIDs {
 
 /**
  * TOC markers for auto-generated content
+ * TOC:BEGIN supports optional DEPTH parameter: <!-- TOC:BEGIN DEPTH=3 -->
  */
-const TOC_BEGIN_MARKER = '<!-- TOC:BEGIN -->';
+const TOC_BEGIN_PATTERN = /<!-- TOC:BEGIN(?:\s+DEPTH=(\d+))?\s*-->/;
 const TOC_END_MARKER = '<!-- TOC:END -->';
+
+/**
+ * Generates TOC:BEGIN marker with optional depth parameter
+ */
+function generateTOCBeginMarker(depth?: number): string {
+  if (depth !== undefined) {
+    return `<!-- TOC:BEGIN DEPTH=${depth} -->`;
+  }
+  return '<!-- TOC:BEGIN -->';
+}
 
 /**
  * Heading interface for TOC generation
@@ -351,8 +362,15 @@ function extractHeadings(text: string, maxLevel: number): IHeading[] {
 
 /**
  * Generates TOC markdown from headings with markers for update detection
+ * @param headings List of headings to include in TOC
+ * @param caption Caption text to display above TOC
+ * @param depth Optional depth to include in TOC:BEGIN marker
  */
-function generateTOC(headings: IHeading[], caption: string): string {
+function generateTOC(
+  headings: IHeading[],
+  caption: string,
+  depth?: number
+): string {
   const lines: string[] = [];
 
   for (const heading of headings) {
@@ -367,23 +385,51 @@ function generateTOC(headings: IHeading[], caption: string): string {
   // Caption is raw markdown - insert verbatim
   const captionPart = caption ? `${caption}\n\n` : '';
   // Wrap TOC in markers for update detection
-  return `${TOC_BEGIN_MARKER}\n${captionPart}${lines.join('\n')}\n${TOC_END_MARKER}\n\n`;
+  const beginMarker = generateTOCBeginMarker(depth);
+  return `${beginMarker}\n${captionPart}${lines.join('\n')}\n${TOC_END_MARKER}\n\n`;
 }
 
 /**
- * Finds and replaces existing TOC in text, or returns null if no TOC found
+ * Finds existing TOC in text and returns info about it
+ * @returns Object with beginIndex, endIndex, and parsed depth, or null if no TOC found
  */
-function findAndReplaceTOC(text: string, newTOC: string): string | null {
-  const beginIndex = text.indexOf(TOC_BEGIN_MARKER);
+function findTOC(
+  text: string
+): { beginIndex: number; endIndex: number; depth: number | undefined } | null {
+  const beginMatch = text.match(TOC_BEGIN_PATTERN);
+  if (!beginMatch) {
+    return null;
+  }
+
+  const beginIndex = text.search(TOC_BEGIN_PATTERN);
   const endIndex = text.indexOf(TOC_END_MARKER);
 
   if (beginIndex === -1 || endIndex === -1 || endIndex < beginIndex) {
     return null; // No valid TOC found
   }
 
+  const depth = beginMatch[1] ? parseInt(beginMatch[1], 10) : undefined;
+  return { beginIndex, endIndex, depth };
+}
+
+/**
+ * Finds and replaces existing TOC in text, or returns null if no TOC found
+ */
+function findAndReplaceTOC(text: string, newTOC: string): string | null {
+  const tocInfo = findTOC(text);
+  if (!tocInfo) {
+    return null;
+  }
+
+  // Find the full BEGIN marker to get its length
+  const beginMatch = text.match(TOC_BEGIN_PATTERN);
+  if (!beginMatch) {
+    return null;
+  }
+
   // Replace from BEGIN marker to END marker (inclusive)
-  const before = text.slice(0, beginIndex);
-  const after = text.slice(endIndex + TOC_END_MARKER.length);
+  const before = text.slice(0, tocInfo.beginIndex);
+  const after = text.slice(tocInfo.endIndex + TOC_END_MARKER.length);
 
   // New TOC already ends with TOC_END_MARKER + \n\n, trim the trailing \n\n
   // and preserve whatever whitespace was after the original END marker
@@ -411,7 +457,7 @@ function insertTOCInFileEditor(
   // Get document text
   const text = model.sharedModel.getSource();
 
-  // Extract headings
+  // Extract headings using settings depth
   const headings = extractHeadings(text, settings.tocMaxLevel);
 
   if (headings.length === 0) {
@@ -419,8 +465,12 @@ function insertTOCInFileEditor(
     return;
   }
 
-  // Generate TOC markdown
-  const tocMarkdown = generateTOC(headings, settings.tocCaption);
+  // Generate TOC markdown with depth from settings
+  const tocMarkdown = generateTOC(
+    headings,
+    settings.tocCaption,
+    settings.tocMaxLevel
+  );
 
   // Insert at cursor position
   const cursor = editor.getCursorPosition();
@@ -467,7 +517,7 @@ function insertTOCInNotebook(
     }
   }
 
-  // Extract headings from all markdown cells
+  // Extract headings from all markdown cells using settings depth
   const headings = extractHeadings(allText, settings.tocMaxLevel);
 
   if (headings.length === 0) {
@@ -475,8 +525,12 @@ function insertTOCInNotebook(
     return;
   }
 
-  // Generate TOC markdown
-  const tocMarkdown = generateTOC(headings, settings.tocCaption);
+  // Generate TOC markdown with depth from settings
+  const tocMarkdown = generateTOC(
+    headings,
+    settings.tocCaption,
+    settings.tocMaxLevel
+  );
 
   // Insert at cursor position
   const cursor = editor.getCursorPosition();
@@ -614,16 +668,30 @@ function updateTOCInFileEditor(
   const model = widget.content.model;
   const text = model.sharedModel.getSource();
 
-  // Extract headings
-  const headings = extractHeadings(text, settings.tocMaxLevel);
+  // Find existing TOC and parse its depth parameter
+  const tocInfo = findTOC(text);
+  if (!tocInfo) {
+    console.warn('No TOC markers found in document - use Insert TOC first');
+    return false;
+  }
+
+  // Use depth from existing TOC marker, or fall back to settings default
+  const effectiveDepth = tocInfo.depth ?? settings.tocMaxLevel;
+
+  // Extract headings using the effective depth
+  const headings = extractHeadings(text, effectiveDepth);
 
   if (headings.length === 0) {
     console.warn('No headings found in document');
     return false;
   }
 
-  // Generate new TOC
-  const tocMarkdown = generateTOC(headings, settings.tocCaption);
+  // Generate new TOC with the same depth parameter
+  const tocMarkdown = generateTOC(
+    headings,
+    settings.tocCaption,
+    effectiveDepth
+  );
 
   // Try to find and replace existing TOC
   const updatedText = findAndReplaceTOC(text, tocMarkdown);
@@ -652,6 +720,29 @@ function updateTOCInNotebook(
 
   const notebook = panel.content;
 
+  // First, find the cell containing the TOC markers and get its depth
+  let tocCellIndex = -1;
+  let effectiveDepth = settings.tocMaxLevel;
+
+  for (let i = 0; i < notebook.model!.cells.length; i++) {
+    const cell = notebook.model!.cells.get(i);
+    if (cell.type === 'markdown') {
+      const cellText = cell.sharedModel.getSource();
+      const tocInfo = findTOC(cellText);
+      if (tocInfo) {
+        tocCellIndex = i;
+        // Use depth from existing TOC marker, or fall back to settings default
+        effectiveDepth = tocInfo.depth ?? settings.tocMaxLevel;
+        break;
+      }
+    }
+  }
+
+  if (tocCellIndex === -1) {
+    console.warn('No TOC markers found in notebook - use Insert TOC first');
+    return false;
+  }
+
   // Collect all markdown text from all markdown cells
   let allText = '';
   for (let i = 0; i < notebook.model!.cells.length; i++) {
@@ -661,32 +752,32 @@ function updateTOCInNotebook(
     }
   }
 
-  // Extract headings from all markdown cells
-  const headings = extractHeadings(allText, settings.tocMaxLevel);
+  // Extract headings from all markdown cells using the effective depth
+  const headings = extractHeadings(allText, effectiveDepth);
 
   if (headings.length === 0) {
     console.warn('No headings found in notebook');
     return false;
   }
 
-  // Generate new TOC
-  const tocMarkdown = generateTOC(headings, settings.tocCaption);
+  // Generate new TOC with the same depth parameter
+  const tocMarkdown = generateTOC(
+    headings,
+    settings.tocCaption,
+    effectiveDepth
+  );
 
-  // Find the cell containing the TOC markers and update it
-  for (let i = 0; i < notebook.model!.cells.length; i++) {
-    const cell = notebook.model!.cells.get(i);
-    if (cell.type === 'markdown') {
-      const cellText = cell.sharedModel.getSource();
-      const updatedText = findAndReplaceTOC(cellText, tocMarkdown);
+  // Update the cell containing the TOC
+  const tocCell = notebook.model!.cells.get(tocCellIndex);
+  const cellText = tocCell.sharedModel.getSource();
+  const updatedText = findAndReplaceTOC(cellText, tocMarkdown);
 
-      if (updatedText) {
-        cell.sharedModel.setSource(updatedText);
-        return true;
-      }
-    }
+  if (updatedText) {
+    tocCell.sharedModel.setSource(updatedText);
+    return true;
   }
 
-  console.warn('No TOC markers found in notebook - use Insert TOC first');
+  console.warn('Failed to update TOC in notebook');
   return false;
 }
 

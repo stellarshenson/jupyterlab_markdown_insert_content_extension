@@ -142,8 +142,8 @@ test.describe('TOC Generation', () => {
       return editor?.textContent || '';
     });
 
-    // Verify TOC markers are present
-    expect(content).toContain('<!-- TOC:BEGIN -->');
+    // Verify TOC markers are present with DEPTH parameter (default is 3)
+    expect(content).toContain('<!-- TOC:BEGIN DEPTH=3 -->');
     expect(content).toContain('<!-- TOC:END -->');
     expect(content).toContain('**Table of Contents**');
 
@@ -157,7 +157,7 @@ test.describe('TOC Generation', () => {
   test('should update existing TOC when Update TOC is called', async ({
     page
   }) => {
-    // Create markdown with existing TOC
+    // Create markdown with existing TOC (no DEPTH - uses default from settings)
     const markdownWithTOC = `<!-- TOC:BEGIN -->
 **Table of Contents**
 
@@ -189,6 +189,9 @@ test.describe('TOC Generation', () => {
       const editor = document.querySelector('.jp-FileEditor .cm-content');
       return editor?.textContent || '';
     });
+
+    // After update, DEPTH from settings (default 3) should be added
+    expect(content).toContain('<!-- TOC:BEGIN DEPTH=3 -->');
 
     // Old heading should be replaced with new ones
     expect(content).not.toContain('[Old Heading]');
@@ -605,9 +608,58 @@ test.describe('Feature Interactions', () => {
     expect(content).not.toContain('1.1.1.1.1.1');
   });
 
+  test('TOC DEPTH parameter is preserved during update', async ({ page }) => {
+    // Create markdown with custom DEPTH=2 in TOC marker
+    const markdownWithDepth = `<!-- TOC:BEGIN DEPTH=2 -->
+**Table of Contents**
+
+- [Old](#Old)
+<!-- TOC:END -->
+
+# Heading One
+
+## Heading Two
+
+### Heading Three
+
+#### Heading Four
+`;
+
+    await page.menu.clickMenuItem('File>New>Markdown File');
+    await page.waitForSelector('.jp-FileEditor');
+
+    const editor = page.locator('.jp-FileEditor .cm-content');
+    await editor.click();
+    await page.keyboard.type(markdownWithDepth);
+
+    // Update TOC
+    await editor.click({ button: 'right' });
+    await page.click('li.lm-Menu-item:has-text("Markdown Tools")');
+    await page.click('li.lm-Menu-item:has-text("Update Table of Contents")');
+
+    await page.waitForTimeout(500);
+
+    const content = await page.evaluate(() => {
+      const editor = document.querySelector('.jp-FileEditor .cm-content');
+      return editor?.textContent || '';
+    });
+
+    // DEPTH=2 should be preserved in the marker
+    expect(content).toContain('<!-- TOC:BEGIN DEPTH=2 -->');
+
+    // Only H1 and H2 should be included (DEPTH=2)
+    expect(content).toContain('[Heading One]');
+    expect(content).toContain('[Heading Two]');
+
+    // H3 and H4 should NOT be included due to DEPTH=2
+    expect(content).not.toContain('[Heading Three]');
+    expect(content).not.toContain('[Heading Four]');
+  });
+
   test('whitespace after TOC:END is preserved during update', async ({
     page
   }) => {
+    // Using TOC without DEPTH - will get default from settings after update
     const markdownWithSpacing = `<!-- TOC:BEGIN -->
 **Table of Contents**
 
@@ -642,7 +694,8 @@ Some content after TOC.
     expect(content).toContain('# New Heading');
     expect(content).toContain('Some content after TOC.');
 
-    // TOC should be updated with new heading
+    // TOC should be updated with new heading and DEPTH added
+    expect(content).toContain('<!-- TOC:BEGIN DEPTH=3 -->');
     expect(content).toContain('[New Heading]');
     // Old entry should be gone
     expect(content).not.toContain('[Old]');
