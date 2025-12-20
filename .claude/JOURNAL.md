@@ -72,3 +72,6 @@ This journal tracks substantive work on documents, diagrams, and documentation c
 
 23. **Task - TOC DEPTH parameter support** (v1.1.13): Added per-TOC depth configuration via marker parameter<br>
     **Result**: Extended TOC:BEGIN marker to support optional DEPTH parameter (e.g., `<!-- TOC:BEGIN DEPTH=2 -->`). When inserting TOC, depth from settings is embedded in marker. When updating TOC, depth is parsed from existing marker and preserved - if no DEPTH present, settings default is used and added to marker. Implementation includes `TOC_BEGIN_PATTERN` regex for parsing, `generateTOCBeginMarker()` helper, and `findTOC()` function returning depth alongside position info. Updated `updateTOCInFileEditor()` and `updateTOCInNotebook()` to use effective depth from marker or settings. Added integration test verifying DEPTH=2 limits TOC to H1-H2 headings only and is preserved across updates
+
+24. **Task - README badges and features update** (v1.1.14): Added missing badges and documented DEPTH feature<br>
+    **Result**: Added KOLOMOLO and PayPal Donate badges to README.md. Added per-TOC depth configuration to features list documenting the `<!-- TOC:BEGIN DEPTH=N -->` marker syntax

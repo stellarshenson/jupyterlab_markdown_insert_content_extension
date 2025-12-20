@@ -5,6 +5,8 @@
 [![PyPI version](https://img.shields.io/pypi/v/jupyterlab_markdown_insert_content_extension.svg)](https://pypi.org/project/jupyterlab_markdown_insert_content_extension/)
 [![Total PyPI downloads](https://static.pepy.tech/badge/jupyterlab_markdown_insert_content_extension)](https://pepy.tech/project/jupyterlab_markdown_insert_content_extension)
 [![JupyterLab 4](https://img.shields.io/badge/JupyterLab-4-orange.svg)](https://jupyterlab.readthedocs.io/en/stable/)
+[![Brought To You By KOLOMOLO](https://img.shields.io/badge/Brought%20To%20You%20By-KOLOMOLO-00ffff?style=flat)](https://kolomolo.com)
+[![Donate PayPal](https://img.shields.io/badge/Donate-PayPal-blue?style=flat)](https://www.paypal.com/donate/?hosted_button_id=B4KPBJDLLXTSA)
 
 JupyterLab extension for inserting reusable content blocks into markdown files and notebook cells, starting with automatic table of contents generation.
 
@@ -25,6 +27,7 @@ Configure TOC caption and maximum heading level through JupyterLab settings:
 - **Context menu integration** - right-click in markdown editors or notebook cells to access all tools via "Markdown Tools" submenu
 - **Table of contents generation** - automatically extracts headings and creates hierarchical TOC with working anchor links
 - **TOC update support** - regenerates existing TOC in place using markers (`<!-- TOC:BEGIN -->` and `<!-- TOC:END -->`)
+- **Per-TOC depth configuration** - each TOC stores its depth in the marker (`<!-- TOC:BEGIN DEPTH=3 -->`) and preserves it across updates
 - **Heading exclusion** - mark headings with `<!-- TOC:IGNORE -->` to exclude from TOC while preserving numbering
 - **Hierarchical heading numbering** - add, remove, or update numbering on headings (1., 1.1., 1.1.2., etc.)
 - **Configurable settings** - customize TOC caption, maximum heading depth, numbering depth, and trailing dot style
