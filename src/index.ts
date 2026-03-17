@@ -939,26 +939,39 @@ const plugin: JupyterFrontEndPlugin<void> = {
         });
     }
 
+    /**
+     * Returns true only when the active widget is a markdown file editor
+     * or a notebook with a markdown cell. Prevents menu from appearing
+     * in non-markdown file editors (Python, JSON, etc.)
+     */
+    const isMarkdownContext = (): boolean => {
+      const currentWidget = app.shell.currentWidget;
+
+      // File editor context - must be a markdown file
+      if (
+        editorTracker?.currentWidget &&
+        currentWidget === editorTracker.currentWidget
+      ) {
+        const path = editorTracker.currentWidget.context.path;
+        return path.endsWith('.md') || path.endsWith('.markdown');
+      }
+
+      // Notebook context - selector already filters to markdown cells
+      if (
+        notebookTracker?.currentWidget &&
+        currentWidget === notebookTracker.currentWidget
+      ) {
+        return true;
+      }
+
+      return false;
+    };
+
     // Register command to insert TOC
     app.commands.addCommand(CommandIDs.insertTOC, {
       label: 'Insert Table of Contents',
       caption: 'Insert a table of contents at the cursor position',
-      isVisible: () => {
-        // For file editor - check if it's a markdown file
-        if (editorTracker?.currentWidget) {
-          const path = editorTracker.currentWidget.context.path;
-          if (path.endsWith('.md') || path.endsWith('.markdown')) {
-            return true;
-          }
-        }
-
-        // For notebooks - always visible (selector filters to edit mode)
-        if (notebookTracker?.currentWidget) {
-          return true;
-        }
-
-        return false;
-      },
+      isVisible: isMarkdownContext,
       execute: () => {
         // Check current shell widget to determine context
         const currentWidget = app.shell.currentWidget;
@@ -997,22 +1010,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     app.commands.addCommand(CommandIDs.updateTOC, {
       label: 'Update Table of Contents',
       caption: 'Update an existing table of contents (requires TOC markers)',
-      isVisible: () => {
-        // For file editor - check if it's a markdown file
-        if (editorTracker?.currentWidget) {
-          const path = editorTracker.currentWidget.context.path;
-          if (path.endsWith('.md') || path.endsWith('.markdown')) {
-            return true;
-          }
-        }
-
-        // For notebooks - always visible (selector filters to edit mode)
-        if (notebookTracker?.currentWidget) {
-          return true;
-        }
-
-        return false;
-      },
+      isVisible: isMarkdownContext,
       execute: () => {
         const currentWidget = app.shell.currentWidget;
 
@@ -1045,22 +1043,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     app.commands.addCommand(CommandIDs.toggleTOCIgnore, {
       label: 'Toggle Exclude from TOC',
       caption: 'Toggle TOC:IGNORE marker on the heading at cursor position',
-      isVisible: () => {
-        // For file editor - check if it's a markdown file
-        if (editorTracker?.currentWidget) {
-          const path = editorTracker.currentWidget.context.path;
-          if (path.endsWith('.md') || path.endsWith('.markdown')) {
-            return true;
-          }
-        }
-
-        // For notebooks - always visible (selector filters to edit mode)
-        if (notebookTracker?.currentWidget) {
-          return true;
-        }
-
-        return false;
-      },
+      isVisible: isMarkdownContext,
       execute: () => {
         const currentWidget = app.shell.currentWidget;
 
@@ -1093,22 +1076,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     app.commands.addCommand(CommandIDs.addNumbering, {
       label: 'Add Heading Numbering',
       caption: 'Add hierarchical numbering to headings (1., 1.1., etc.)',
-      isVisible: () => {
-        // For file editor - check if it's a markdown file
-        if (editorTracker?.currentWidget) {
-          const path = editorTracker.currentWidget.context.path;
-          if (path.endsWith('.md') || path.endsWith('.markdown')) {
-            return true;
-          }
-        }
-
-        // For notebooks - always visible (selector filters to edit mode)
-        if (notebookTracker?.currentWidget) {
-          return true;
-        }
-
-        return false;
-      },
+      isVisible: isMarkdownContext,
       execute: () => {
         const currentWidget = app.shell.currentWidget;
 
@@ -1141,22 +1109,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     app.commands.addCommand(CommandIDs.removeNumbering, {
       label: 'Remove Heading Numbering',
       caption: 'Remove hierarchical numbering from headings',
-      isVisible: () => {
-        // For file editor - check if it's a markdown file
-        if (editorTracker?.currentWidget) {
-          const path = editorTracker.currentWidget.context.path;
-          if (path.endsWith('.md') || path.endsWith('.markdown')) {
-            return true;
-          }
-        }
-
-        // For notebooks - always visible
-        if (notebookTracker?.currentWidget) {
-          return true;
-        }
-
-        return false;
-      },
+      isVisible: isMarkdownContext,
       execute: () => {
         const currentWidget = app.shell.currentWidget;
 
@@ -1189,22 +1142,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     app.commands.addCommand(CommandIDs.updateNumbering, {
       label: 'Update Heading Numbering',
       caption: 'Update hierarchical numbering on headings',
-      isVisible: () => {
-        // For file editor - check if it's a markdown file
-        if (editorTracker?.currentWidget) {
-          const path = editorTracker.currentWidget.context.path;
-          if (path.endsWith('.md') || path.endsWith('.markdown')) {
-            return true;
-          }
-        }
-
-        // For notebooks - always visible
-        if (notebookTracker?.currentWidget) {
-          return true;
-        }
-
-        return false;
-      },
+      isVisible: isMarkdownContext,
       execute: () => {
         const currentWidget = app.shell.currentWidget;
 
@@ -1256,12 +1194,32 @@ const plugin: JupyterFrontEndPlugin<void> = {
     submenu.addItem({ command: CommandIDs.removeNumbering });
     submenu.addItem({ command: CommandIDs.updateNumbering });
 
-    // Add submenu to editor context menu - for file editors
+    // Mark markdown file editor widgets with a CSS class so the context menu
+    // selector can distinguish them from non-markdown file editors
+    const MD_CLASS = 'jp-MarkdownFileEditor';
     if (editorTracker) {
+      const markWidget = (widget: ReturnType<typeof editorTracker.find>) => {
+        if (!widget) {
+          return;
+        }
+        const path = widget.context.path;
+        if (path.endsWith('.md') || path.endsWith('.markdown')) {
+          widget.content.node.classList.add(MD_CLASS);
+        }
+      };
+
+      // Mark existing widgets
+      editorTracker.forEach(markWidget);
+
+      // Mark new widgets as they open
+      editorTracker.widgetAdded.connect((_, widget) => {
+        markWidget(widget);
+      });
+
       app.contextMenu.addItem({
         type: 'submenu',
         submenu,
-        selector: '.jp-FileEditor',
+        selector: `.jp-FileEditor.${MD_CLASS}`,
         rank: 10
       });
     }
