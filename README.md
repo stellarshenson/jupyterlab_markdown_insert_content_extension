@@ -33,6 +33,8 @@ Configure TOC caption and maximum heading level through JupyterLab settings:
 - **Per-TOC depth configuration** - each TOC stores its depth in the marker (`<!-- TOC:BEGIN DEPTH=3 -->`) and preserves it across updates
 - **Heading exclusion** - mark headings with `<!-- TOC:IGNORE -->` to exclude from TOC while preserving numbering
 - **Hierarchical heading numbering** - add, remove, or update numbering on headings (1., 1.1., 1.1.2., etc.)
+- **GitHub alert boxes** - insert `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]` or `> [!CAUTION]` blockquotes, wrapping the current selection when there is one
+- **Emoji picker** - searchable emoji dialog that tracks frequently used emoji, with the dataset bundled so it works offline
 - **Configurable settings** - customize TOC caption, maximum heading depth, numbering depth, and trailing dot style
 - **Code block filtering** - excludes headings within fenced code blocks from TOC and numbering
 - **JupyterLab-compatible anchors** - generates anchor IDs matching JupyterLab's format for reliable navigation
@@ -73,6 +75,28 @@ Add hierarchical numbering to your headings:
 Other numbering commands:
 - **Remove Heading Numbering** - strips all numbering from headings
 - **Update Heading Numbering** - recalculates numbering and updates TOC
+
+### Alert Boxes
+
+Insert a GitHub-style alert blockquote:
+
+1. Optionally select the text that should become the alert body
+2. Right-click and select **Markdown Tools > Insert Alert > Note** (or Tip, Important, Warning, Caution)
+
+With no selection, a placeholder body is inserted:
+
+```markdown
+> [!WARNING]
+> Urgent info that needs immediate user attention to avoid problems.
+```
+
+### Emoji
+
+1. Position the cursor where the emoji should go
+2. Right-click and select **Markdown Tools > Insert Emoji**
+3. Search or browse, then click an emoji to insert it and close the dialog
+
+Frequently used emoji are remembered between sessions and shown in a bar below the grid.
 
 ### Configure Settings
 

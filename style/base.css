@@ -3,3 +3,27 @@
 
     https://jupyterlab.readthedocs.io/en/stable/developer/css.html
 */
+
+/* JupyterLab caps the dialog body below 400px, so a fixed-height picker gets
+   its frequently-used bar sliced in half. Size the wrapper, and let the
+   picker's own flex layout take whatever the body actually grants. */
+.jp-MarkdownInsert-emojiPicker {
+  height: min(400px, 100%);
+}
+
+/* Emoji picker dialog body - map the picker's own custom properties onto the
+   active JupyterLab theme so it follows light and dark themes */
+.jp-MarkdownInsert-emojiPicker emoji-picker {
+  --background: var(--jp-layout-color1);
+  --border-color: var(--jp-border-color1);
+  --button-active-background: var(--jp-layout-color3);
+  --button-hover-background: var(--jp-layout-color2);
+  --category-font-color: var(--jp-ui-font-color2);
+  --indicator-color: var(--jp-brand-color1);
+  --input-border-color: var(--jp-border-color1);
+  --input-font-color: var(--jp-ui-font-color1);
+  --input-placeholder-color: var(--jp-ui-font-color3);
+  --outline-color: var(--jp-brand-color1);
+
+  height: 100%;
+}

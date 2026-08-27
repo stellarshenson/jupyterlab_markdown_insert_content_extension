@@ -294,6 +294,7 @@ test.describe('Emoji Picker', () => {
     // returned focus to the editor, and the caret stayed after the emoji.
     // Rebuilding the whole source instead of splicing would send the caret to
     // offset 0 and produce ' doneStatus: <emoji>'.
+    await expect(editor).toBeFocused();
     await page.keyboard.type(' done');
 
     const lines = await editorLines(page, '.jp-FileEditor');
@@ -376,7 +377,9 @@ test.describe('Emoji Picker', () => {
     await expect(page.locator('.jp-Dialog')).toHaveCount(0);
 
     // Typing without clicking proves the notebook was returned to edit mode
-    // with the caret after the emoji
+    // with the caret after the emoji. Wait for the focus rather than assuming
+    // it - asserting it is the point of the test, and racing it is a flake.
+    await expect(editor).toBeFocused();
     await page.keyboard.type(' done');
 
     const lines = await editorLines(page, '.jp-MarkdownCell');

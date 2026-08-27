@@ -126,3 +126,15 @@ dmypy.json
 
 # Yarn cache
 .yarn/
+
+# project-local node environment (Makefile 1.32)
+.nodeenv/
+
+# graphify knowledge-graph artefacts and other scratch output
+tmp/
+
+# build and test logs (logs/README.md stays tracked)
+logs/*.log
+
+# jest junit reporter output
+junit.xml

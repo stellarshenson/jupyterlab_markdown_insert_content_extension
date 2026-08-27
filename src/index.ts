@@ -2,10 +2,13 @@ import {
   JupyterFrontEnd,
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
+import { Dialog } from '@jupyterlab/apputils';
 import { IEditorTracker } from '@jupyterlab/fileeditor';
 import { INotebookTracker } from '@jupyterlab/notebook';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
-import { Menu } from '@lumino/widgets';
+import { Menu, Widget } from '@lumino/widgets';
+import { Picker } from 'emoji-picker-element';
+import emojiDataUrl from 'emoji-picker-element-data/en/emojibase/data.json';
 
 /**
  * Command IDs
@@ -17,6 +20,8 @@ namespace CommandIDs {
   export const addNumbering = 'markdown-insert:add-numbering';
   export const removeNumbering = 'markdown-insert:remove-numbering';
   export const updateNumbering = 'markdown-insert:update-numbering';
+  export const insertAlert = 'markdown-insert:insert-alert';
+  export const insertEmoji = 'markdown-insert:insert-emoji';
 }
 
 /**
@@ -884,6 +889,219 @@ function toggleTOCIgnoreInNotebook(notebookTracker: INotebookTracker): void {
 }
 
 /**
+ * GitHub alert kinds, rendered as `> [!TAG]` blockquotes
+ */
+interface IAlertType {
+  tag: string;
+  label: string;
+  placeholder: string;
+}
+
+const ALERT_TYPES: IAlertType[] = [
+  {
+    tag: 'NOTE',
+    label: 'Note',
+    placeholder:
+      'Useful information that users should know, even when skimming content.'
+  },
+  {
+    tag: 'TIP',
+    label: 'Tip',
+    placeholder: 'Helpful advice for doing things better or more easily.'
+  },
+  {
+    tag: 'IMPORTANT',
+    label: 'Important',
+    placeholder: 'Key information users need to know to achieve their goal.'
+  },
+  {
+    tag: 'WARNING',
+    label: 'Warning',
+    placeholder:
+      'Urgent info that needs immediate user attention to avoid problems.'
+  },
+  {
+    tag: 'CAUTION',
+    label: 'Caution',
+    placeholder: 'Advises about risks or negative outcomes of certain actions.'
+  }
+];
+
+/**
+ * Builds a GitHub alert blockquote from a tag and a body.
+ * A selection starting or ending on a line break would otherwise leave a
+ * dangling `>` at that end.
+ */
+function buildAlert(tag: string, body: string): string {
+  const quoted = body
+    .replace(/^\n+|\n+$/g, '')
+    .split('\n')
+    .map(line => (line ? `> ${line}` : '>'));
+  return `> [!${tag}]\n${quoted.join('\n')}`;
+}
+
+/**
+ * Blank lines a blockquote needs to stand as its own block at an insertion
+ * point. Without the leading pad it merges into the preceding paragraph;
+ * without the trailing one, CommonMark lazy continuation pulls the following
+ * paragraph inside the alert.
+ */
+function alertPadding(
+  prefix: string,
+  suffix: string
+): { before: string; after: string } {
+  let before = '\n\n';
+  if (!prefix || prefix.endsWith('\n\n')) {
+    before = '';
+  } else if (prefix.endsWith('\n')) {
+    before = '\n';
+  }
+
+  // Top up whatever blank line the suffix already provides, rather than
+  // always adding one - two newlines on each side would stack up
+  const leading = /^\n*/.exec(suffix)?.[0].length ?? 0;
+  const after = suffix ? '\n\n'.slice(leading) : '';
+  return { before, after };
+}
+
+/**
+ * Editing surface shared by markdown file editors and notebook markdown cells
+ */
+interface IMarkdownTarget {
+  getSource(): string;
+  replaceSelection(text: string): void;
+  selectionOffsets(): { start: number; end: number };
+  focus(): void;
+}
+
+/**
+ * Wraps a markdown file editor as an edit target
+ */
+function fileEditorTarget(
+  widget: NonNullable<IEditorTracker['currentWidget']>
+): IMarkdownTarget {
+  const editor = widget.content.editor;
+  const shared = widget.content.model.sharedModel;
+
+  return {
+    getSource: () => shared.getSource(),
+    // Splices the range and repositions the caret after the inserted text;
+    // rebuilding the whole source instead would send the caret to offset 0
+    // and collapse the insertion into a whole-document undo step
+    replaceSelection: text => editor.replaceSelection?.(text),
+    selectionOffsets: () => {
+      const selection = editor.getSelection();
+      const start = editor.getOffsetAt(selection.start);
+      const end = editor.getOffsetAt(selection.end);
+      return { start: Math.min(start, end), end: Math.max(start, end) };
+    },
+    focus: () => editor.focus()
+  };
+}
+
+/**
+ * Wraps the active notebook markdown cell as an edit target
+ */
+function notebookTarget(
+  panel: NonNullable<INotebookTracker['currentWidget']>
+): IMarkdownTarget | null {
+  const activeCell = panel.content.activeCell;
+  if (!activeCell || activeCell.model.type !== 'markdown') {
+    return null;
+  }
+
+  const editor = activeCell.editor;
+  if (!editor) {
+    return null;
+  }
+
+  const shared = activeCell.model.sharedModel;
+
+  return {
+    getSource: () => shared.getSource(),
+    replaceSelection: text => editor.replaceSelection?.(text),
+    selectionOffsets: () => {
+      const selection = editor.getSelection();
+      const start = editor.getOffsetAt(selection.start);
+      const end = editor.getOffsetAt(selection.end);
+      return { start: Math.min(start, end), end: Math.max(start, end) };
+    },
+    // Right-clicking an editor drops the notebook back to command mode.
+    // Setting the mode restores focus eventually but not synchronously, so the
+    // explicit call is what makes the caret usable on the next keystroke -
+    // without it, typing straight after an insertion is lost.
+    focus: () => {
+      panel.content.mode = 'edit';
+      editor.focus();
+    }
+  };
+}
+
+/**
+ * Dialog that lets Enter reach the emoji picker.
+ *
+ * Dialog listens for keydown in the capture phase and, on Enter, resolves its
+ * default button - Cancel here, since that is the only button - before the
+ * event can descend into the picker's shadow root, so the picker's own
+ * Enter-to-select never fires. Skipping the base handler leaves the event to
+ * descend; Cancel still answers Enter through native button activation.
+ */
+class EmojiDialog extends Dialog<void> {
+  handleEvent(event: Event): void {
+    if (event.type === 'keydown' && (event as KeyboardEvent).key === 'Enter') {
+      return;
+    }
+    super.handleEvent(event);
+  }
+}
+
+/**
+ * Dialog body hosting the emoji picker web component.
+ * The picker keeps its own frequently-used list in IndexedDB, and reads the
+ * emoji dataset from a bundled asset so it works without network access.
+ */
+class EmojiPickerWidget extends Widget {
+  readonly picker: Picker;
+
+  constructor() {
+    super({ node: document.createElement('div') });
+    this.addClass('jp-MarkdownInsert-emojiPicker');
+    this.picker = new Picker({ dataSource: emojiDataUrl });
+    this.node.appendChild(this.picker);
+  }
+}
+
+/**
+ * Opens the emoji picker dialog and resolves with the chosen emoji, or null
+ */
+async function pickEmoji(): Promise<string | null> {
+  const body = new EmojiPickerWidget();
+  const dialog = new EmojiDialog({
+    title: 'Insert Emoji',
+    body,
+    buttons: [Dialog.cancelButton()]
+  });
+
+  let picked: string | null = null;
+  body.picker.addEventListener('emoji-click', event => {
+    picked = event.detail.unicode ?? null;
+    dialog.resolve(0);
+  });
+
+  // Dialog focuses its Cancel button on attach, leaving the search box - the
+  // point of the dialog - unreachable from the keyboard. `ready` resolves
+  // immediately after that, so this lands the focus where the user expects it.
+  void dialog.ready.then(() =>
+    body.picker.shadowRoot
+      ?.querySelector<HTMLInputElement>('input#search')
+      ?.focus()
+  );
+
+  await dialog.launch();
+  return picked;
+}
+
+/**
  * Initialization data for the jupyterlab_markdown_insert_content_extension extension.
  */
 const plugin: JupyterFrontEndPlugin<void> = {
@@ -965,6 +1183,33 @@ const plugin: JupyterFrontEndPlugin<void> = {
       }
 
       return false;
+    };
+
+    /**
+     * Returns the active markdown editing surface, or null when the active
+     * widget is not a markdown file editor or notebook markdown cell
+     */
+    const resolveTarget = (): IMarkdownTarget | null => {
+      const currentWidget = app.shell.currentWidget;
+
+      if (
+        notebookTracker?.currentWidget &&
+        currentWidget === notebookTracker.currentWidget
+      ) {
+        return notebookTarget(notebookTracker.currentWidget);
+      }
+
+      if (
+        editorTracker?.currentWidget &&
+        currentWidget === editorTracker.currentWidget
+      ) {
+        const path = editorTracker.currentWidget.context.path;
+        if (path.endsWith('.md') || path.endsWith('.markdown')) {
+          return fileEditorTarget(editorTracker.currentWidget);
+        }
+      }
+
+      return null;
     };
 
     // Register command to insert TOC
@@ -1179,6 +1424,73 @@ const plugin: JupyterFrontEndPlugin<void> = {
       }
     });
 
+    // Register command to insert a GitHub alert blockquote.
+    // The alert kind is carried in the `tag` argument so one command backs
+    // all five menu entries.
+    app.commands.addCommand(CommandIDs.insertAlert, {
+      label: args => {
+        const alert = ALERT_TYPES.find(a => a.tag === args.tag);
+        return alert ? alert.label : 'Alert';
+      },
+      caption: 'Insert a GitHub alert blockquote',
+      isVisible: isMarkdownContext,
+      execute: args => {
+        const target = resolveTarget();
+        if (!target) {
+          console.warn('No active markdown editor or notebook markdown cell');
+          return;
+        }
+
+        const alert = ALERT_TYPES.find(a => a.tag === args.tag);
+        if (!alert) {
+          console.warn(`Unknown alert type: ${args.tag}`);
+          return;
+        }
+
+        // Wrap the selection when there is one, otherwise seed a placeholder
+        const source = target.getSource();
+        const { start, end } = target.selectionOffsets();
+        // A whitespace-only selection is not a body - fall back to the
+        // placeholder rather than emitting an alert with nothing in it
+        const selected = source.slice(start, end);
+        const block = buildAlert(
+          alert.tag,
+          selected.trim() ? selected : alert.placeholder
+        );
+        const { before, after } = alertPadding(
+          source.slice(0, start),
+          source.slice(end)
+        );
+
+        target.replaceSelection(before + block + after);
+        // The dialog-less path still loses focus to the closing context menu
+        target.focus();
+      }
+    });
+
+    // Register command to insert an emoji picked from a dialog
+    app.commands.addCommand(CommandIDs.insertEmoji, {
+      label: 'Insert Emoji',
+      caption: 'Pick an emoji and insert it at the cursor position',
+      isVisible: isMarkdownContext,
+      execute: async () => {
+        const target = resolveTarget();
+        if (!target) {
+          console.warn('No active markdown editor or notebook markdown cell');
+          return;
+        }
+
+        const emoji = await pickEmoji();
+        if (emoji) {
+          target.replaceSelection(emoji);
+          // Dialog restores focus to whatever was active when it opened - the
+          // already-detached context menu - so the caret is unreachable
+          // without this
+          target.focus();
+        }
+      }
+    });
+
     // Create submenu for markdown tools
     const submenuId = 'markdown-insert-submenu';
     const submenu = new Menu({ commands: app.commands });
@@ -1193,6 +1505,21 @@ const plugin: JupyterFrontEndPlugin<void> = {
     submenu.addItem({ command: CommandIDs.addNumbering });
     submenu.addItem({ command: CommandIDs.removeNumbering });
     submenu.addItem({ command: CommandIDs.updateNumbering });
+
+    // Nested submenu with one entry per GitHub alert kind
+    const alertMenu = new Menu({ commands: app.commands });
+    alertMenu.id = 'markdown-insert-alert-submenu';
+    alertMenu.title.label = 'Insert Alert';
+    for (const alert of ALERT_TYPES) {
+      alertMenu.addItem({
+        command: CommandIDs.insertAlert,
+        args: { tag: alert.tag }
+      });
+    }
+
+    submenu.addItem({ type: 'separator' });
+    submenu.addItem({ type: 'submenu', submenu: alertMenu });
+    submenu.addItem({ command: CommandIDs.insertEmoji });
 
     // Mark markdown file editor widgets with a CSS class so the context menu
     // selector can distinguish them from non-markdown file editors
