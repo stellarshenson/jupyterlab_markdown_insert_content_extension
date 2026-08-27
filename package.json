@@ -1,6 +1,6 @@
 {
     "name": "jupyterlab_markdown_insert_content_extension",
-    "version": "1.1.20",
+    "version": "1.1.28",
     "description": "Jupyterlab extension to automatically insert content into markdown - such as TOC, bibliography, list of figures etc.",
     "keywords": [
         "jupyter",
@@ -19,7 +19,9 @@
     "files": [
         "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
         "style/**/*.{css,js,eot,gif,html,jpg,json,png,svg,woff2,ttf}",
-        "src/**/*.{ts,tsx}"
+        "src/**/*.{ts,tsx}",
+        "schema/*.json",
+        "webpack.config.js"
     ],
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
@@ -57,8 +59,19 @@
     },
     "dependencies": {
         "@jupyterlab/application": "^4.0.0",
+        "@jupyterlab/apputils": "^4.7.3",
         "@jupyterlab/fileeditor": "^4.0.0",
-        "@jupyterlab/notebook": "^4.0.0"
+        "@jupyterlab/notebook": "^4.0.0",
+        "@jupyterlab/settingregistry": "^4.0.0",
+        "@lumino/widgets": "^2.0.0",
+        "emoji-picker-element": "^1.29.1",
+        "emoji-picker-element-data": "^1.8.0"
+    },
+    "resolutions": {
+        "vscode-languageserver-protocol": "3.17.5"
+    },
+    "overrides": {
+        "vscode-languageserver-protocol": "3.17.5"
     },
     "devDependencies": {
         "@jupyterlab/builder": "^4.0.0",
@@ -98,7 +111,8 @@
     "jupyterlab": {
         "extension": true,
         "outputDir": "jupyterlab_markdown_insert_content_extension/labextension",
-        "schemaDir": "schema"
+        "schemaDir": "schema",
+        "webpackConfig": "./webpack.config.js"
     },
     "eslintIgnore": [
         "node_modules",
