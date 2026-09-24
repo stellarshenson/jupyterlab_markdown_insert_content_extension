@@ -4,15 +4,74 @@
     https://jupyterlab.readthedocs.io/en/stable/developer/css.html
 */
 
-/* JupyterLab caps the dialog body below 400px, so a fixed-height picker gets
-   its frequently-used bar sliced in half. Size the wrapper, and let the
-   picker's own flex layout take whatever the body actually grants. */
-.jp-MarkdownInsert-emojiPicker {
-  height: min(400px, 100%);
+/* JupyterLab caps the dialog body below the picker's natural height, so a
+   fixed-height picker gets its frequently-used bar sliced in half. Size the
+   outer box, and let the panels take whatever the body actually grants. */
+.jp-MarkdownInsert-symbolPicker {
+  display: flex;
+  flex-direction: column;
+  height: min(440px, 100%);
 }
 
-/* Emoji picker dialog body - map the picker's own custom properties onto the
-   active JupyterLab theme so it follows light and dark themes */
+/* Pill row switching between the Emoji and Glyphs panels */
+.jp-MarkdownInsert-symbolTabs {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+/* Dialog adds jp-mod-styled to every button in its body, and
+   button.jp-mod-styled outranks a single class. Two classes win it back. */
+.jp-MarkdownInsert-symbolTabs .jp-MarkdownInsert-symbolTab {
+  padding: 3px 12px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--jp-ui-font-color2);
+  font-family: inherit;
+  font-size: var(--jp-ui-font-size1);
+  line-height: normal;
+  letter-spacing: normal;
+  cursor: pointer;
+}
+
+.jp-MarkdownInsert-symbolTab:hover {
+  background: var(--jp-layout-color2);
+  color: var(--jp-ui-font-color1);
+}
+
+.jp-MarkdownInsert-symbolTab.jp-mod-active {
+  border-color: color-mix(in srgb, var(--jp-brand-color1) 45%, transparent);
+  background: color-mix(in srgb, var(--jp-brand-color1) 14%, transparent);
+  color: var(--jp-ui-font-color0);
+}
+
+/* Both panels occupy one grid cell, so the dialog keeps the size of the
+   larger panel and does not resize when the tab changes. Visibility, not
+   display, hides the other panel: it keeps its size in the layout while
+   leaving the focus order and the accessibility tree. */
+.jp-MarkdownInsert-symbolPanels {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  min-height: 0;
+}
+
+.jp-MarkdownInsert-symbolPanels > * {
+  grid-area: 1 / 1;
+}
+
+.jp-MarkdownInsert-symbolPanels > :not(.jp-mod-active) {
+  visibility: hidden;
+}
+
+.jp-MarkdownInsert-emojiPicker {
+  height: 100%;
+}
+
+/* Emoji picker - map the picker's own custom properties onto the active
+   JupyterLab theme so it follows light and dark themes */
 .jp-MarkdownInsert-emojiPicker emoji-picker {
   --background: var(--jp-layout-color1);
   --border-color: var(--jp-border-color1);
@@ -26,4 +85,88 @@
   --outline-color: var(--jp-brand-color1);
 
   height: 100%;
+}
+
+/* The emoji picker sets the dialog width. Zero width with a full-width
+   minimum keeps the glyph panel from widening the dialog. */
+.jp-MarkdownInsert-glyphPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-sizing: border-box;
+  width: 0;
+  min-width: 100%;
+  height: 100%;
+  padding: 6px;
+  border: 1px solid var(--jp-border-color1);
+  background: var(--jp-layout-color1);
+}
+
+.jp-MarkdownInsert-glyphSearch {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.jp-MarkdownInsert-glyphResults {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.jp-MarkdownInsert-glyphGroupName {
+  margin: 8px 0 4px;
+  color: var(--jp-ui-font-color2);
+  font-size: var(--jp-ui-font-size1);
+}
+
+.jp-MarkdownInsert-glyphGrid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.jp-MarkdownInsert-glyphGrid .jp-MarkdownInsert-glyph {
+  width: 2.375rem;
+  height: 2.375rem;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--jp-content-font-color1);
+  font-family: var(--jp-content-font-family);
+  font-size: 1.25rem;
+  line-height: 1;
+  letter-spacing: normal;
+  cursor: pointer;
+}
+
+.jp-MarkdownInsert-glyph:hover,
+.jp-MarkdownInsert-glyph:focus {
+  background: var(--jp-layout-color2);
+}
+
+.jp-MarkdownInsert-glyph:focus-visible {
+  outline: 2px solid var(--jp-brand-color1);
+  outline-offset: -2px;
+}
+
+.jp-MarkdownInsert-glyphEmpty {
+  padding: 16px 0;
+  color: var(--jp-ui-font-color2);
+}
+
+.jp-MarkdownInsert-glyphFooter {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 2rem;
+  border-top: 1px solid var(--jp-border-color2);
+  color: var(--jp-ui-font-color1);
+  font-size: var(--jp-ui-font-size1);
+}
+
+.jp-MarkdownInsert-glyphPreview {
+  font-family: var(--jp-content-font-family);
+  font-size: 1.5rem;
 }

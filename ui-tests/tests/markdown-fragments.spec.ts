@@ -109,6 +109,31 @@ async function clickMenuItem(page: Page, label: string): Promise<void> {
     .click();
 }
 
+/**
+ * Opens the Insert Symbol dialog on the editor and switches it to the Glyphs
+ * tab. Clicking the tab must hand focus to the glyph search box.
+ */
+async function openGlyphsTab(page: Page, editor: Locator): Promise<Locator> {
+  await openMarkdownTools(page, editor);
+  await clickMenuItem(page, 'Insert Symbol');
+  await page
+    .locator('.jp-Dialog .jp-MarkdownInsert-symbolTab', { hasText: 'Glyphs' })
+    .click();
+  const search = page.locator('.jp-Dialog .jp-MarkdownInsert-glyphSearch');
+  await expect(search).toBeFocused();
+  return search;
+}
+
+/**
+ * A glyph button in the open dialog. The same glyph can sit in Recent and in
+ * its own group, so this takes the first.
+ */
+function glyphButton(page: Page, char: string): Locator {
+  return page
+    .locator(`.jp-Dialog .jp-MarkdownInsert-glyph[data-char="${char}"]`)
+    .first();
+}
+
 test.use({ autoGoto: false });
 
 test.describe('GitHub Alert Boxes', () => {
@@ -267,7 +292,7 @@ test.describe('Emoji Picker', () => {
     await page.keyboard.type('Status: ');
 
     await openMarkdownTools(page, editor);
-    await clickMenuItem(page, 'Insert Emoji');
+    await clickMenuItem(page, 'Insert Symbol');
 
     const picker = page.locator(
       '.jp-Dialog .jp-MarkdownInsert-emojiPicker emoji-picker'
@@ -307,7 +332,7 @@ test.describe('Emoji Picker', () => {
     await page.keyboard.type('Ship it ');
 
     await openMarkdownTools(page, editor);
-    await clickMenuItem(page, 'Insert Emoji');
+    await clickMenuItem(page, 'Insert Symbol');
 
     const picker = page.locator(
       '.jp-Dialog .jp-MarkdownInsert-emojiPicker emoji-picker'
@@ -337,7 +362,7 @@ test.describe('Emoji Picker', () => {
     await page.keyboard.type('Status: ');
 
     await openMarkdownTools(page, editor);
-    await clickMenuItem(page, 'Insert Emoji');
+    await clickMenuItem(page, 'Insert Symbol');
 
     await expect(
       page.locator('.jp-Dialog .jp-MarkdownInsert-emojiPicker emoji-picker')
@@ -346,8 +371,12 @@ test.describe('Emoji Picker', () => {
     await page.click('.jp-Dialog .jp-mod-reject');
     await expect(page.locator('.jp-Dialog')).toHaveCount(0);
 
+    // Cancel hands the caret back too - typing continues where it was
+    await expect(editor).toBeFocused();
+    await page.keyboard.type('ok');
+
     const lines = await editorLines(page, '.jp-FileEditor');
-    expect(lines).toEqual(['Status: ']);
+    expect(lines).toEqual(['Status: ok']);
   });
 
   test('should insert an emoji into a notebook markdown cell', async ({
@@ -358,7 +387,7 @@ test.describe('Emoji Picker', () => {
     await page.keyboard.type('Ship it ');
 
     await openMarkdownTools(page, editor);
-    await clickMenuItem(page, 'Insert Emoji');
+    await clickMenuItem(page, 'Insert Symbol');
 
     const picker = page.locator(
       '.jp-Dialog .jp-MarkdownInsert-emojiPicker emoji-picker'
@@ -384,6 +413,275 @@ test.describe('Emoji Picker', () => {
 
     const lines = await editorLines(page, '.jp-MarkdownCell');
     expect(lines).toContain(`Ship it ${emoji} done`);
+  });
+});
+
+test.describe('Glyph Picker', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto();
+  });
+
+  test('should insert a clicked glyph and return focus to the editor', async ({
+    page
+  }) => {
+    const editor = await newMarkdownFile(page);
+    await editor.click();
+    await page.keyboard.type('Rating: ');
+
+    await openGlyphsTab(page, editor);
+    await glyphButton(page, '★').click();
+    await expect(page.locator('.jp-Dialog')).toHaveCount(0);
+
+    // Typing straight afterwards proves focus came back with the caret after
+    // the glyph
+    await expect(editor).toBeFocused();
+    await page.keyboard.type(' done');
+
+    const lines = await editorLines(page, '.jp-FileEditor');
+    expect(lines).toContain('Rating: ★ done');
+  });
+
+  test('should reach the Glyphs tab and insert a search hit by keyboard alone', async ({
+    page
+  }) => {
+    const editor = await newMarkdownFile(page);
+    await editor.click();
+    await page.keyboard.type('Mark ');
+
+    await openMarkdownTools(page, editor);
+    await clickMenuItem(page, 'Insert Symbol');
+    const emojiTab = page.locator('.jp-Dialog .jp-MarkdownInsert-symbolTab', {
+      hasText: 'Emoji'
+    });
+    const glyphsTab = page.locator('.jp-Dialog .jp-MarkdownInsert-symbolTab', {
+      hasText: 'Glyphs'
+    });
+
+    // The dialog opens on the Emoji tab with its search focused; Shift+Tab
+    // reaches the selected tab, and ArrowRight must switch tabs rather than
+    // being taken by Dialog for its footer buttons
+    await page.keyboard.press('Shift+Tab');
+    await expect(emojiTab).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await expect(glyphsTab).toBeFocused();
+    await expect(glyphsTab).toHaveAttribute('aria-selected', 'true');
+
+    // Tab skips the hidden emoji panel and lands in the glyph search
+    await page.keyboard.press('Tab');
+    await expect(
+      page.locator('.jp-Dialog .jp-MarkdownInsert-glyphSearch')
+    ).toBeFocused();
+
+    await page.keyboard.type('check');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.jp-Dialog')).toHaveCount(0);
+
+    const lines = await editorLines(page, '.jp-FileEditor');
+    expect(lines).toContain('Mark ✓');
+  });
+
+  test('should move through the results with the arrow keys', async ({
+    page
+  }) => {
+    const editor = await newMarkdownFile(page);
+    await editor.click();
+    await page.keyboard.type('Rate ');
+
+    await openGlyphsTab(page, editor);
+    await page.keyboard.type('star');
+
+    // The footer names what Enter in the search box would insert
+    await expect(
+      page.locator('.jp-Dialog .jp-MarkdownInsert-glyphFooter')
+    ).toContainText('full star · U+2605');
+
+    // ArrowDown enters the grid on the first hit; ArrowRight must move within
+    // the grid rather than jump to the Cancel button
+    await page.keyboard.press('ArrowDown');
+    await expect(glyphButton(page, '★')).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await expect(glyphButton(page, '☆')).toBeFocused();
+    await expect(
+      page.locator('.jp-Dialog .jp-MarkdownInsert-glyphFooter')
+    ).toContainText('empty star · U+2606');
+
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.jp-Dialog')).toHaveCount(0);
+
+    const lines = await editorLines(page, '.jp-FileEditor');
+    expect(lines).toContain('Rate ☆');
+  });
+
+  test('should keep the footer on what Enter inserts', async ({ page }) => {
+    const editor = await newMarkdownFile(page);
+    await editor.click();
+
+    await openGlyphsTab(page, editor);
+    await page.keyboard.type('star');
+    const footer = page.locator('.jp-Dialog .jp-MarkdownInsert-glyphFooter');
+    await expect(footer).toContainText('full star · U+2605');
+
+    // Hovering names the glyph in its tooltip, not in the footer
+    await glyphButton(page, '☆').hover();
+    await expect(glyphButton(page, '☆')).toHaveAttribute(
+      'title',
+      'empty star · U+2606'
+    );
+    await expect(footer).toContainText('full star · U+2605');
+
+    // Focus in the grid moves the Enter target, and ArrowUp off the top row
+    // hands it back to the first result
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowRight');
+    await expect(footer).toContainText('empty star · U+2606');
+    await page.keyboard.press('ArrowUp');
+    await expect(
+      page.locator('.jp-Dialog .jp-MarkdownInsert-glyphSearch')
+    ).toBeFocused();
+    await expect(footer).toContainText('full star · U+2605');
+
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.jp-Dialog')).toHaveCount(0);
+    const lines = await editorLines(page, '.jp-FileEditor');
+    expect(lines).toContain('★');
+  });
+
+  test('should step the tabs from the focused tab, not the selected one', async ({
+    page
+  }) => {
+    const editor = await newMarkdownFile(page);
+    await editor.click();
+    await openGlyphsTab(page, editor);
+
+    // Tab goes from the search to the grid, then to Cancel; Tab on Cancel
+    // wraps to the first tab, which is the unselected Emoji tab
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await expect(page.locator('.jp-Dialog .jp-mod-reject')).toBeFocused();
+    await page.keyboard.press('Tab');
+    const emojiTab = page.locator('.jp-Dialog .jp-MarkdownInsert-symbolTab', {
+      hasText: 'Emoji'
+    });
+    const glyphsTab = page.locator('.jp-Dialog .jp-MarkdownInsert-symbolTab', {
+      hasText: 'Glyphs'
+    });
+    await expect(emojiTab).toBeFocused();
+
+    // ArrowRight from Emoji is Glyphs, whichever tab is selected
+    await page.keyboard.press('ArrowRight');
+    await expect(glyphsTab).toBeFocused();
+    await expect(glyphsTab).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('should insert a character typed as a code point', async ({ page }) => {
+    const editor = await newMarkdownFile(page);
+    await editor.click();
+    await page.keyboard.type('Next ');
+
+    await openGlyphsTab(page, editor);
+    await page.keyboard.type('U+2192');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.jp-Dialog')).toHaveCount(0);
+
+    const lines = await editorLines(page, '.jp-FileEditor');
+    expect(lines).toContain('Next →');
+  });
+
+  test('should keep glyphs with an emoji form in text presentation', async ({
+    page
+  }) => {
+    const editor = await newMarkdownFile(page);
+    await editor.click();
+    await page.keyboard.type('Todo ');
+
+    await openGlyphsTab(page, editor);
+    await page.keyboard.type('checked checkbox');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.jp-Dialog')).toHaveCount(0);
+
+    // U+FE0E after the glyph stops platforms drawing it as a colour emoji
+    const lines = await editorLines(page, '.jp-FileEditor');
+    expect(lines).toContain('Todo ☑︎');
+  });
+
+  test('should list a picked glyph first under Recent', async ({ page }) => {
+    const editor = await newMarkdownFile(page);
+    await editor.click();
+
+    await openGlyphsTab(page, editor);
+    await expect(
+      page.locator('.jp-Dialog .jp-MarkdownInsert-glyphGroupName').first()
+    ).toHaveText('Stars');
+    await glyphButton(page, '▇').click();
+    await expect(page.locator('.jp-Dialog')).toHaveCount(0);
+
+    await openGlyphsTab(page, editor);
+    await expect(
+      page.locator('.jp-Dialog .jp-MarkdownInsert-glyphGroupName').first()
+    ).toHaveText('Recent');
+    await expect(
+      page.locator('.jp-Dialog .jp-MarkdownInsert-glyph').first()
+    ).toHaveAttribute('data-char', '▇');
+  });
+
+  test('should keep the dialog size when switching tabs', async ({ page }) => {
+    const editor = await newMarkdownFile(page);
+    await editor.click();
+
+    await openMarkdownTools(page, editor);
+    await clickMenuItem(page, 'Insert Symbol');
+
+    // Measure only once the emoji grid has rendered - its scrollbar appears
+    // with the data and would change the width
+    const picker = page.locator(
+      '.jp-Dialog .jp-MarkdownInsert-emojiPicker emoji-picker'
+    );
+    await expect(picker.locator('.emoji-menu button').first()).toBeVisible();
+
+    const content = page.locator('.jp-Dialog-content');
+    const before = await content.boundingBox();
+    await page
+      .locator('.jp-Dialog .jp-MarkdownInsert-symbolTab', { hasText: 'Glyphs' })
+      .click();
+    await expect(
+      page.locator('.jp-Dialog .jp-MarkdownInsert-glyphSearch')
+    ).toBeVisible();
+    expect(await content.boundingBox()).toEqual(before);
+
+    // The buttons rendered before the dialog opened get Dialog's jp-mod-styled
+    // class, whose 13px text must not win over the glyph size
+    await expect(glyphButton(page, '★')).toHaveCSS('font-size', '20px');
+
+    // The glyph footer must sit inside the dialog body, not below its fold
+    const body = await page.locator('.jp-Dialog-body').boundingBox();
+    const footer = await page
+      .locator('.jp-Dialog .jp-MarkdownInsert-glyphFooter')
+      .boundingBox();
+    expect(body).not.toBeNull();
+    expect(footer).not.toBeNull();
+    expect(footer!.y + footer!.height).toBeLessThanOrEqual(
+      body!.y + body!.height + 1
+    );
+  });
+
+  test('should insert a glyph into a notebook markdown cell', async ({
+    page
+  }) => {
+    const editor = await newNotebookMarkdownCell(page);
+    await editor.click();
+    await page.keyboard.type('Rating ');
+
+    await openGlyphsTab(page, editor);
+    await glyphButton(page, '★').click();
+    await expect(page.locator('.jp-Dialog')).toHaveCount(0);
+
+    // Wait for the focus rather than assuming it - the notebook returns to
+    // edit mode asynchronously, and racing it is a flake
+    await expect(editor).toBeFocused();
+    await page.keyboard.type(' done');
+
+    const lines = await editorLines(page, '.jp-MarkdownCell');
+    expect(lines).toContain('Rating ★ done');
   });
 });
 

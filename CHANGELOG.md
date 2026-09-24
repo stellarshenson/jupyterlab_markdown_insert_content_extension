@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.1.30] - 2026-09-24
+
+### Added
+
+- Glyphs tab in the Insert Symbol dialog with about 150 curated Unicode glyphs in 12 groups - stars, checkboxes, arrows, bar and shade blocks, shapes, box drawing, bullets, math, Greek, currency and typography - searchable by name and by words from the official Unicode names
+- Code-point entry in the glyph search: `U+2605` or `2605` inserts that character, including characters outside the list
+- Recent row listing the 16 most recently used glyphs first
+- Jest unit tests for the glyph search, code-point parsing and text presentation, replacing the template placeholder test
+
+### Changed
+
+- The Markdown Tools menu item is now **Insert Symbol** and opens one dialog with Emoji and Glyphs tabs; the command id is unchanged, so existing keyboard shortcuts keep working
+- Glyphs that also have an emoji form, such as ☑ and ▶, are inserted with the text presentation selector U+FE0E so they render as text
+
+### Fixed
+
+- Cancel and Escape in the symbol dialog now return focus to the editor, so typing continues where the caret was
+
 ## [1.1.28] - 2026-08-27
 
 ### Added

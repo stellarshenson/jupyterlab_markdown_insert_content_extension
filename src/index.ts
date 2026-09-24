@@ -2,13 +2,22 @@ import {
   JupyterFrontEnd,
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
-import { Dialog } from '@jupyterlab/apputils';
+import { Dialog, DOMUtils } from '@jupyterlab/apputils';
 import { IEditorTracker } from '@jupyterlab/fileeditor';
 import { INotebookTracker } from '@jupyterlab/notebook';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
-import { Menu, Widget } from '@lumino/widgets';
+import { Menu, Panel, Widget } from '@lumino/widgets';
 import { Picker } from 'emoji-picker-element';
 import emojiDataUrl from 'emoji-picker-element-data/en/emojibase/data.json';
+import {
+  formatCodePoint,
+  GLYPH_GROUPS,
+  glyphFor,
+  IGlyphGroup,
+  parseCodePoint,
+  searchGlyphs,
+  withTextPresentation
+} from './glyphs';
 
 /**
  * Command IDs
@@ -21,7 +30,8 @@ namespace CommandIDs {
   export const removeNumbering = 'markdown-insert:remove-numbering';
   export const updateNumbering = 'markdown-insert:update-numbering';
   export const insertAlert = 'markdown-insert:insert-alert';
-  export const insertEmoji = 'markdown-insert:insert-emoji';
+  // Named before the Glyphs tab existed; kept so shortcuts bound to it resolve
+  export const insertSymbol = 'markdown-insert:insert-emoji';
 }
 
 /**
@@ -1038,25 +1048,35 @@ function notebookTarget(
 }
 
 /**
- * Dialog that lets Enter reach the emoji picker.
+ * Dialog that leaves Enter and the horizontal arrow keys to its body.
  *
- * Dialog listens for keydown in the capture phase and, on Enter, resolves its
- * default button - Cancel here, since that is the only button - before the
- * event can descend into the picker's shadow root, so the picker's own
- * Enter-to-select never fires. Skipping the base handler leaves the event to
- * descend; Cancel still answers Enter through native button activation.
+ * Dialog listens for keydown in the capture phase, before the event reaches
+ * the body. On Enter it resolves its default button - Cancel here, since that
+ * is the only button - so the emoji picker's Enter-to-select and a focused
+ * glyph button never fire. On ArrowLeft and ArrowRight it moves focus to a
+ * footer button whenever any <button> has focus, which would take the arrow
+ * keys away from the tabs and the glyph grid. Skipping the base handler leaves
+ * the event to descend; Cancel still answers Enter through native button
+ * activation, and the footer keeps its own arrow handling.
  */
-class EmojiDialog extends Dialog<void> {
+class PickerDialog extends Dialog<void> {
   handleEvent(event: Event): void {
-    if (event.type === 'keydown' && (event as KeyboardEvent).key === 'Enter') {
-      return;
+    if (event.type === 'keydown') {
+      const key = (event as KeyboardEvent).key;
+      const inFooter = !!document.activeElement?.closest('.jp-Dialog-footer');
+      if (
+        key === 'Enter' ||
+        ((key === 'ArrowLeft' || key === 'ArrowRight') && !inFooter)
+      ) {
+        return;
+      }
     }
     super.handleEvent(event);
   }
 }
 
 /**
- * Dialog body hosting the emoji picker web component.
+ * Emoji tab hosting the emoji picker web component.
  * The picker keeps its own frequently-used list in IndexedDB, and reads the
  * emoji dataset from a bundled asset so it works without network access.
  */
@@ -1071,31 +1091,394 @@ class EmojiPickerWidget extends Widget {
   }
 }
 
+const RECENT_GLYPHS_KEY =
+  'jupyterlab_markdown_insert_content_extension:recent-glyphs';
+const RECENT_GLYPHS_MAX = 16;
+
 /**
- * Opens the emoji picker dialog and resolves with the chosen emoji, or null
+ * Glyphs picked in this browser, most recent first. Storage can be blocked,
+ * so a failed read counts as no history.
  */
-async function pickEmoji(): Promise<string | null> {
-  const body = new EmojiPickerWidget();
-  const dialog = new EmojiDialog({
-    title: 'Insert Emoji',
+function loadRecentGlyphs(): string[] {
+  try {
+    const stored = JSON.parse(localStorage.getItem(RECENT_GLYPHS_KEY) ?? '[]');
+    return Array.isArray(stored) ? stored : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberGlyph(char: string): void {
+  const recent = [char, ...loadRecentGlyphs().filter(c => c !== char)];
+  try {
+    localStorage.setItem(
+      RECENT_GLYPHS_KEY,
+      JSON.stringify(recent.slice(0, RECENT_GLYPHS_MAX))
+    );
+  } catch {
+    // Storage blocked or full - the glyph is still inserted, only the recent
+    // row does not update
+  }
+}
+
+/**
+ * Index of the button in the nearest row above (direction -1) or below (1)
+ * that is closest in horizontal position, or -1 when there is no such row.
+ * Rows come from the rendered geometry, because group headings and wrapping
+ * give each row a different number of columns.
+ */
+function verticalNeighbour(
+  buttons: HTMLElement[],
+  index: number,
+  direction: 1 | -1
+): number {
+  const from = buttons[index].getBoundingClientRect();
+  const centre = from.left + from.width / 2;
+  let best = -1;
+  let bestDy = Infinity;
+  let bestDx = Infinity;
+  for (let i = 0; i < buttons.length; i++) {
+    const rect = buttons[i].getBoundingClientRect();
+    const dy = (rect.top - from.top) * direction;
+    if (dy < from.height / 2) {
+      // Same row, or the wrong direction
+      continue;
+    }
+    const dx = Math.abs(rect.left + rect.width / 2 - centre);
+    // A nearer row always wins; within one row, the closest column wins
+    if (dy < bestDy - 1 || (Math.abs(dy - bestDy) <= 1 && dx < bestDx)) {
+      best = i;
+      bestDy = dy;
+      bestDx = dx;
+    }
+  }
+  return best;
+}
+
+/**
+ * Glyphs tab: a search box, the curated glyph table grouped by kind with the
+ * recently picked glyphs first, and a footer naming the glyph Enter would
+ * insert. A hovered glyph shows its name as a tooltip instead, so the footer
+ * never names one glyph while Enter inserts another.
+ */
+class GlyphPickerWidget extends Widget {
+  readonly search: HTMLInputElement;
+  private readonly _results: HTMLDivElement;
+  private readonly _footer: HTMLDivElement;
+
+  constructor(onPick: (text: string) => void) {
+    super({ node: document.createElement('div') });
+    this.addClass('jp-MarkdownInsert-glyphPicker');
+
+    this.search = document.createElement('input');
+    this.search.type = 'search';
+    this.search.className = 'jp-mod-styled jp-MarkdownInsert-glyphSearch';
+    this.search.placeholder = 'Search, or type a code point (U+2605)';
+    this.search.setAttribute('aria-label', 'Search glyphs');
+
+    this._results = document.createElement('div');
+    this._results.className = 'jp-MarkdownInsert-glyphResults';
+
+    this._footer = document.createElement('div');
+    this._footer.className = 'jp-MarkdownInsert-glyphFooter';
+
+    this.node.append(this.search, this._results, this._footer);
+
+    this.search.addEventListener('input', () => this._render());
+    this.search.addEventListener('keydown', event => {
+      const buttons = this._buttons();
+      if (event.key === 'ArrowDown' && buttons.length) {
+        event.preventDefault();
+        (buttons.find(button => button.tabIndex === 0) ?? buttons[0]).focus();
+      } else if (event.key === 'Enter' && this.search.value.trim()) {
+        event.preventDefault();
+        buttons[0]?.click();
+      }
+    });
+
+    this._results.addEventListener('click', event => {
+      const char = glyphButton(event.target)?.dataset.char;
+      if (char) {
+        rememberGlyph(char);
+        onPick(withTextPresentation(char));
+      }
+    });
+    this._results.addEventListener('keydown', event => this._navigate(event));
+    // What Enter inserts depends on where focus is, so the footer follows it
+    this.node.addEventListener('focusin', event => {
+      const button = glyphButton(event.target);
+      if (button) {
+        // Roving tabindex - Tab leaves the grid instead of walking every glyph
+        for (const other of this._buttons()) {
+          other.tabIndex = other === button ? 0 : -1;
+        }
+      }
+      this._describeEnterTarget();
+    });
+    this.node.addEventListener('focusout', event => {
+      // Focus on the tabs or Cancel - Enter inserts no glyph
+      if (!this.node.contains(event.relatedTarget as Node | null)) {
+        this._footer.replaceChildren();
+      }
+    });
+
+    this._render();
+  }
+
+  private _buttons(): HTMLButtonElement[] {
+    return Array.from(
+      this._results.querySelectorAll<HTMLButtonElement>(
+        '.jp-MarkdownInsert-glyph'
+      )
+    );
+  }
+
+  private _render(): void {
+    const query = this.search.value.trim();
+    const sections: IGlyphGroup[] = [];
+    if (query) {
+      const byCodePoint = parseCodePoint(query);
+      const hits = searchGlyphs(query).filter(
+        glyph => glyph.char !== byCodePoint?.char
+      );
+      sections.push({
+        name: 'Results',
+        glyphs: byCodePoint ? [byCodePoint, ...hits] : hits
+      });
+    } else {
+      const recent = loadRecentGlyphs().map(glyphFor);
+      if (recent.length) {
+        sections.push({ name: 'Recent', glyphs: recent });
+      }
+      sections.push(...GLYPH_GROUPS);
+    }
+
+    const nodes: HTMLElement[] = [];
+    for (const section of sections) {
+      if (!section.glyphs.length) {
+        continue;
+      }
+      const heading = document.createElement('div');
+      heading.className = 'jp-MarkdownInsert-glyphGroupName';
+      heading.textContent = section.name;
+
+      const grid = document.createElement('div');
+      grid.className = 'jp-MarkdownInsert-glyphGrid';
+      grid.setAttribute('role', 'group');
+      grid.setAttribute('aria-label', section.name);
+      for (const glyph of section.glyphs) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'jp-MarkdownInsert-glyph';
+        button.textContent = glyph.char;
+        button.dataset.char = glyph.char;
+        button.tabIndex = -1;
+        button.title = [glyph.name, formatCodePoint(glyph.char)]
+          .filter(Boolean)
+          .join(' · ');
+        button.setAttribute(
+          'aria-label',
+          glyph.name || formatCodePoint(glyph.char)
+        );
+        grid.appendChild(button);
+      }
+      nodes.push(heading, grid);
+    }
+
+    if (!nodes.length) {
+      const empty = document.createElement('div');
+      empty.className = 'jp-MarkdownInsert-glyphEmpty';
+      empty.textContent = 'No matching glyphs';
+      nodes.push(empty);
+    }
+
+    this._results.replaceChildren(...nodes);
+    this._results.scrollTop = 0;
+    const first = this._buttons()[0];
+    if (first) {
+      first.tabIndex = 0;
+    }
+    this._describeEnterTarget();
+  }
+
+  /**
+   * Names in the footer what Enter would insert: the focused glyph, or the
+   * first result while the search box holds a query
+   */
+  private _describeEnterTarget(): void {
+    const active = document.activeElement;
+    const target =
+      glyphButton(active) ??
+      (active === this.search && this.search.value.trim()
+        ? this._buttons()[0]
+        : undefined);
+    if (!target) {
+      this._footer.replaceChildren();
+      return;
+    }
+    const preview = document.createElement('span');
+    preview.className = 'jp-MarkdownInsert-glyphPreview';
+    preview.textContent = target.dataset.char ?? '';
+    this._footer.replaceChildren(preview, target.title);
+  }
+
+  private _navigate(event: KeyboardEvent): void {
+    const buttons = this._buttons();
+    const index = buttons.indexOf(event.target as HTMLButtonElement);
+    if (index === -1) {
+      return;
+    }
+    let next: number;
+    switch (event.key) {
+      case 'ArrowRight':
+        next = Math.min(index + 1, buttons.length - 1);
+        break;
+      case 'ArrowLeft':
+        next = Math.max(index - 1, 0);
+        break;
+      case 'ArrowDown':
+        next = verticalNeighbour(buttons, index, 1);
+        break;
+      case 'ArrowUp':
+        next = verticalNeighbour(buttons, index, -1);
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    if (next !== -1) {
+      buttons[next].focus();
+    } else if (event.key === 'ArrowUp') {
+      this.search.focus();
+    }
+  }
+}
+
+function glyphButton(target: EventTarget | null): HTMLButtonElement | null {
+  return target instanceof HTMLElement
+    ? target.closest<HTMLButtonElement>('.jp-MarkdownInsert-glyph')
+    : null;
+}
+
+/**
+ * Dialog body with an Emoji tab and a Glyphs tab. Both panels share one grid
+ * cell, so the dialog keeps one size whichever tab is showing.
+ */
+class SymbolPickerWidget extends Panel {
+  readonly emoji = new EmojiPickerWidget();
+  readonly glyphs: GlyphPickerWidget;
+  private readonly _tabs: HTMLButtonElement[];
+  private readonly _panels: Widget[];
+  private _current = 0;
+
+  constructor(onPick: (text: string) => void) {
+    super();
+    this.addClass('jp-MarkdownInsert-symbolPicker');
+
+    this.emoji.picker.addEventListener('emoji-click', event => {
+      if (event.detail.unicode) {
+        onPick(event.detail.unicode);
+      }
+    });
+    this.glyphs = new GlyphPickerWidget(onPick);
+    this._panels = [this.emoji, this.glyphs];
+
+    const tabList = new Widget();
+    tabList.addClass('jp-MarkdownInsert-symbolTabs');
+    tabList.node.setAttribute('role', 'tablist');
+    tabList.node.setAttribute('aria-label', 'Symbol type');
+
+    const panels = new Panel();
+    panels.addClass('jp-MarkdownInsert-symbolPanels');
+
+    this._tabs = ['Emoji', 'Glyphs'].map((label, index) => {
+      const panel = this._panels[index];
+      panel.id = DOMUtils.createDomID();
+
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.id = DOMUtils.createDomID();
+      tab.className = 'jp-MarkdownInsert-symbolTab';
+      tab.textContent = label;
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('aria-controls', panel.id);
+      tab.addEventListener('click', () => {
+        this._select(index);
+        this.focusSearch();
+      });
+
+      panel.node.setAttribute('role', 'tabpanel');
+      panel.node.setAttribute('aria-labelledby', tab.id);
+      tabList.node.appendChild(tab);
+      panels.addWidget(panel);
+      return tab;
+    });
+
+    // Arrow keys move between the tabs, as in the WAI-ARIA tabs pattern
+    tabList.node.addEventListener('keydown', event => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+        return;
+      }
+      event.preventDefault();
+      const step = event.key === 'ArrowRight' ? 1 : -1;
+      const count = this._tabs.length;
+      // Step from the focused tab - Dialog's Tab wrap can focus the one not
+      // selected
+      const from = this._tabs.indexOf(event.target as HTMLButtonElement);
+      const next = (from + step + count) % count;
+      this._select(next);
+      this._tabs[next].focus();
+    });
+
+    this.addWidget(tabList);
+    this.addWidget(panels);
+    this._select(0);
+  }
+
+  /**
+   * Focuses the search box of the tab that is showing
+   */
+  focusSearch(): void {
+    if (this._current === 0) {
+      this.emoji.picker.shadowRoot
+        ?.querySelector<HTMLInputElement>('input#search')
+        ?.focus();
+    } else {
+      this.glyphs.search.focus();
+    }
+  }
+
+  private _select(index: number): void {
+    this._current = index;
+    this._tabs.forEach((tab, i) => {
+      const selected = i === index;
+      tab.classList.toggle('jp-mod-active', selected);
+      tab.setAttribute('aria-selected', String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+      this._panels[i].toggleClass('jp-mod-active', selected);
+    });
+  }
+}
+
+/**
+ * Opens the symbol dialog and resolves with the chosen emoji or glyph, or null
+ */
+async function pickSymbol(): Promise<string | null> {
+  let picked: string | null = null;
+  const body = new SymbolPickerWidget(text => {
+    picked = text;
+    dialog.resolve(0);
+  });
+  const dialog = new PickerDialog({
+    title: 'Insert Symbol',
     body,
     buttons: [Dialog.cancelButton()]
-  });
-
-  let picked: string | null = null;
-  body.picker.addEventListener('emoji-click', event => {
-    picked = event.detail.unicode ?? null;
-    dialog.resolve(0);
   });
 
   // Dialog focuses its Cancel button on attach, leaving the search box - the
   // point of the dialog - unreachable from the keyboard. `ready` resolves
   // immediately after that, so this lands the focus where the user expects it.
-  void dialog.ready.then(() =>
-    body.picker.shadowRoot
-      ?.querySelector<HTMLInputElement>('input#search')
-      ?.focus()
-  );
+  void dialog.ready.then(() => body.focusSearch());
 
   await dialog.launch();
   return picked;
@@ -1468,10 +1851,10 @@ const plugin: JupyterFrontEndPlugin<void> = {
       }
     });
 
-    // Register command to insert an emoji picked from a dialog
-    app.commands.addCommand(CommandIDs.insertEmoji, {
-      label: 'Insert Emoji',
-      caption: 'Pick an emoji and insert it at the cursor position',
+    // Register command to insert an emoji or a glyph picked from a dialog
+    app.commands.addCommand(CommandIDs.insertSymbol, {
+      label: 'Insert Symbol',
+      caption: 'Pick an emoji or a Unicode glyph and insert it at the cursor',
       isVisible: isMarkdownContext,
       execute: async () => {
         const target = resolveTarget();
@@ -1480,14 +1863,14 @@ const plugin: JupyterFrontEndPlugin<void> = {
           return;
         }
 
-        const emoji = await pickEmoji();
-        if (emoji) {
-          target.replaceSelection(emoji);
-          // Dialog restores focus to whatever was active when it opened - the
-          // already-detached context menu - so the caret is unreachable
-          // without this
-          target.focus();
+        const symbol = await pickSymbol();
+        if (symbol) {
+          target.replaceSelection(symbol);
         }
+        // Dialog restores focus to whatever was active when it opened - the
+        // already-detached context menu - so the caret is unreachable without
+        // this, after a pick and after Cancel or Escape alike
+        target.focus();
       }
     });
 
@@ -1519,7 +1902,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
     submenu.addItem({ type: 'separator' });
     submenu.addItem({ type: 'submenu', submenu: alertMenu });
-    submenu.addItem({ command: CommandIDs.insertEmoji });
+    submenu.addItem({ command: CommandIDs.insertSymbol });
 
     // Mark markdown file editor widgets with a CSS class so the context menu
     // selector can distinguish them from non-markdown file editors

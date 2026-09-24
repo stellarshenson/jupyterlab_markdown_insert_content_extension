@@ -35,6 +35,7 @@ Configure TOC caption and maximum heading level through JupyterLab settings:
 - **Hierarchical heading numbering** - add, remove, or update numbering on headings (1., 1.1., 1.1.2., etc.)
 - **GitHub alert boxes** - insert `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]` or `> [!CAUTION]` blockquotes, wrapping the current selection when there is one
 - **Emoji picker** - searchable emoji dialog that tracks frequently used emoji, with the dataset bundled so it works offline
+- **Glyph picker** - second tab in the same dialog with about 150 Unicode glyphs (stars, checkboxes, arrows, bars, shapes, box drawing, math, Greek, currency, typography), searchable by name, with recently used glyphs first and any character reachable by its code point
 - **Configurable settings** - customize TOC caption, maximum heading depth, numbering depth, and trailing dot style
 - **Code block filtering** - excludes headings within fenced code blocks from TOC and numbering
 - **JupyterLab-compatible anchors** - generates anchor IDs matching JupyterLab's format for reliable navigation
@@ -90,13 +91,21 @@ With no selection, a placeholder body is inserted:
 > Urgent info that needs immediate user attention to avoid problems.
 ```
 
-### Emoji
+### Emoji and Glyphs
 
-1. Position the cursor where the emoji should go
-2. Right-click and select **Markdown Tools > Insert Emoji**
-3. Search or browse, then click an emoji to insert it and close the dialog
+1. Position the cursor where the symbol should go
+2. Right-click and select **Markdown Tools > Insert Symbol**
+3. Pick from the **Emoji** tab, or switch to the **Glyphs** tab
+4. Search or browse, then click a symbol to insert it and close the dialog
 
-Frequently used emoji are remembered between sessions and shown in a bar below the grid.
+Frequently used emoji are remembered between sessions and shown in a bar below the grid. The Glyphs tab lists the 16 most recently used glyphs first, under **Recent**.
+
+In the Glyphs tab:
+
+- The search matches plain names, and for some glyphs words from the official Unicode names - `empty star` and `white star` both find ☆
+- A code point such as `U+2605` or `2605` inserts that character, including characters outside the list
+- The arrow keys move through the glyphs, and Enter inserts the one that has focus. Enter in the search box inserts the first result. The line under the grid names the glyph Enter will insert, and hovering a glyph shows its name as a tooltip
+- Glyphs that also have an emoji form, such as ☑ and ▶, are inserted with the text presentation selector U+FE0E, so they do not render as colour emoji
 
 ### Configure Settings
 
