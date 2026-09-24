@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.31] - 2026-09-24
+
+### Changed
+
+- Development toolchain upgraded to the newest versions that work with JupyterLab 4: TypeScript 6.0, typescript-eslint 8, stylelint 17 with its configs, eslint-config-prettier 10, rimraf 6 and npm-run-all2 9
+- TypeScript resolves modules with `bundler`, because TypeScript 6 rejects the deprecated `node` setting
+- Integration tests run on Galata 5.6.4 and Playwright 1.63.0, matching JupyterLab 4.6.4
+- `yarn.lock`, `package-lock.json` and `ui-tests/yarn.lock` re-resolved to the latest versions within their ranges
+
 ## [1.1.30] - 2026-09-24
 
 ### Added
