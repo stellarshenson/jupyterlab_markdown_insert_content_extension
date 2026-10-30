@@ -138,3 +138,6 @@ logs/*.log
 
 # jest junit reporter output
 junit.xml
+
+# Run output
+logs/

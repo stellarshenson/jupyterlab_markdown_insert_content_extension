@@ -45,7 +45,7 @@ Configure TOC caption and maximum heading level through JupyterLab settings:
 
 ## Requirements
 
-- JupyterLab >= 4.0.0
+- JupyterLab >= 4.6.0
 
 ## Install
 

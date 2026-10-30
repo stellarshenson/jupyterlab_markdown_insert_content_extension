@@ -16,3 +16,7 @@ CHANGELOG.md
 **/CHANGELOG.md
 CLAUDE.md
 **/CLAUDE.md
+eslint.config.mjs
+.venv
+.claude
+.agents
