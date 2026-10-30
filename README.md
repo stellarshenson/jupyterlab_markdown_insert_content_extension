@@ -1,7 +1,7 @@
 # jupyterlab_markdown_insert_content_extension
 
 [![GitHub Actions](https://github.com/stellarshenson/jupyterlab_markdown_insert_content_extension/actions/workflows/build.yml/badge.svg)](https://github.com/stellarshenson/jupyterlab_markdown_insert_content_extension/actions/workflows/build.yml)
-[![npm version](https://img.shields.io/npm/v/jupyterlab_markdown_insert_content_extension.svg)](https://www.npmjs.com/package/jupyterlab_markdown_insert_content_extension)
+[![npm version](https://img.shields.io/npm/v/@stellarshenson/jupyterlab-markdown-insert-content-extension.svg)](https://www.npmjs.com/package/@stellarshenson/jupyterlab-markdown-insert-content-extension)
 [![PyPI version](https://img.shields.io/pypi/v/jupyterlab_markdown_insert_content_extension.svg)](https://pypi.org/project/jupyterlab_markdown_insert_content_extension/)
 [![Total PyPI downloads](https://static.pepy.tech/badge/jupyterlab_markdown_insert_content_extension)](https://pepy.tech/project/jupyterlab_markdown_insert_content_extension)
 [![JupyterLab 4](https://img.shields.io/badge/JupyterLab-4-orange.svg)](https://jupyterlab.readthedocs.io/en/stable/)

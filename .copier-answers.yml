@@ -8,7 +8,7 @@ has_ai_rules: false
 has_binder: false
 has_settings: false
 kind: frontend
-labextension_name: jupyterlab_markdown_insert_content_extension
+labextension_name: '@stellarshenson/jupyterlab-markdown-insert-content-extension'
 project_short_description: Jupyterlab extension to automatically insert content into
     markdown - such as TOC, bibliography, list of figures etc.
 python_name: jupyterlab_markdown_insert_content_extension

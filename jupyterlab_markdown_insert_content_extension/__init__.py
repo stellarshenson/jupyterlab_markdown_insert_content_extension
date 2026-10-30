@@ -12,5 +12,5 @@ except ImportError:
 def _jupyter_labextension_paths():
     return [{
         "src": "labextension",
-        "dest": "jupyterlab_markdown_insert_content_extension"
+        "dest": "@stellarshenson/jupyterlab-markdown-insert-content-extension"
     }]

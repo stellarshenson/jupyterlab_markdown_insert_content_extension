@@ -1485,10 +1485,10 @@ async function pickSymbol(): Promise<string | null> {
 }
 
 /**
- * Initialization data for the jupyterlab_markdown_insert_content_extension extension.
+ * Initialization data for the @stellarshenson/jupyterlab-markdown-insert-content-extension extension.
  */
 const plugin: JupyterFrontEndPlugin<void> = {
-  id: 'jupyterlab_markdown_insert_content_extension:plugin',
+  id: '@stellarshenson/jupyterlab-markdown-insert-content-extension:plugin',
   description:
     'Jupyterlab extension to automatically insert content into markdown - such as TOC, bibliography, list of figures etc.',
   autoStart: true,
@@ -1500,7 +1500,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     settingRegistry: ISettingRegistry | null
   ) => {
     console.log(
-      'JupyterLab extension jupyterlab_markdown_insert_content_extension is activated!'
+      'JupyterLab extension @stellarshenson/jupyterlab-markdown-insert-content-extension is activated!'
     );
 
     // Default settings (mutable to allow updates from settings registry)

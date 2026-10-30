@@ -83,7 +83,7 @@ test.describe('Extension Activation', () => {
       logs.filter(
         s =>
           s ===
-          'JupyterLab extension jupyterlab_markdown_insert_content_extension is activated!'
+          'JupyterLab extension @stellarshenson/jupyterlab-markdown-insert-content-extension is activated!'
       )
     ).toHaveLength(1);
   });
