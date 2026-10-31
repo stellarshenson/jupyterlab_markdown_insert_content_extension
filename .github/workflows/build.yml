@@ -148,3 +148,16 @@ jobs:
         path: |
           ui-tests/test-results
           ui-tests/playwright-report
+
+  check_links:
+    name: Check Links
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
+        with:
+          python_version: '3.13'
+      - uses: jupyterlab/maintainer-tools/.github/actions/check-links@v1
+        with:
+          ignore_links: "https://www.npmjs.com/package/.* https://www.youtube.com/.*"

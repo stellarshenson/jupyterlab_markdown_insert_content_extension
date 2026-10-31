@@ -6,12 +6,12 @@ author_email: konrad.jelen@gmail.com
 author_name: Stellars Henson
 has_ai_rules: false
 has_binder: false
-has_settings: false
+has_settings: true
 kind: frontend
 labextension_name: '@stellarshenson/jupyterlab-markdown-insert-content-extension'
 project_short_description: Jupyterlab extension to automatically insert content into
     markdown - such as TOC, bibliography, list of figures etc.
 python_name: jupyterlab_markdown_insert_content_extension
-repository: ''
+repository: https://github.com/stellarshenson/jupyterlab_markdown_insert_content_extension
 test: true
 
