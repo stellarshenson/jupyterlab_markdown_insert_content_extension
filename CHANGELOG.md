@@ -52,6 +52,16 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## [1.1.33] - 2026-10-31
+
+### Changed
+
+- Upgrade to extension template v4.6.5 and Makefile 1.46
+
+### Fixed
+
+- Take the scoped @stellarshenson/jupyterlab-markdown-insert-content-extension npm name
+
 ## 1.0.22 (2025-01-11)
 
 **Released**: RELEASE_1.0.22
