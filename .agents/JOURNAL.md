@@ -104,3 +104,6 @@ This journal tracks substantive work on documents, diagrams, and documentation c
 
 34. **Task - Require Python 3.12** (v1.1.36): raised the minimum Python to 3.12 on the owner's decision<br>
     **Result**: `requires-python` in `pyproject.toml` moved to `>=3.12`, and the classifiers for Python 3.10 and 3.11 are removed. Runtime floors already excluded older versions on some extensions, where pip then installed a release from before the scoped npm rename with no error. The dependency floors stay. `uv pip compile --python-version 3.12` resolves every runtime requirement, and CI runs Python 3.13.
+
+35. **Task - Check-links tolerance for pepy.tech** (v1.1.36): Build's Check Links job went red after the Makefile 1.48 commit on a 503 from `https://pepy.tech/project/jupyterlab_markdown_insert_content_extension`<br>
+    **Result**: `check_links` failed 1 of 19 README URLs - the pepy.tech project link answered `503: Service Unavailable` from the GitHub runner while the badge itself is valid, so the host outage is not a code defect. The fix adds `https://pepy.tech/.*` and `https://static.pepy.tech/.*` to `ignore_links` in `.github/workflows/build.yml`, matching the sibling extensions; the other 18 links stay checked.
