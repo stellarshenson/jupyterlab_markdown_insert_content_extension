@@ -107,3 +107,6 @@ This journal tracks substantive work on documents, diagrams, and documentation c
 
 35. **Task - Check-links tolerance for pepy.tech** (v1.1.36): Build's Check Links job went red after the Makefile 1.48 commit on a 503 from `https://pepy.tech/project/jupyterlab_markdown_insert_content_extension`<br>
     **Result**: `check_links` failed 1 of 19 README URLs - the pepy.tech project link answered `503: Service Unavailable` from the GitHub runner while the badge itself is valid, so the host outage is not a code defect. The fix adds `https://pepy.tech/.*` and `https://static.pepy.tech/.*` to `ignore_links` in `.github/workflows/build.yml`, matching the sibling extensions; the other 18 links stay checked.
+
+36. **Task - Build lifecycle brought to Makefile 1.48** (v1.1.36): the canonical Makefile went to every extension on 2026-11-02<br>
+    **Result**: Makefile 1.48 taken verbatim in the fleet-wide move to one canonical build file on 2026-11-02; `mrproper` now removes tmp, logs, .venv, graphify-out, coverage and .pytest_cache as well, so a cleaned tree holds no build or test residue; install and publish are `.NOTPARALLEL`, the guard `jupyterlab_vscode_icons_extension` had carried locally; the cleaned tree carries the tag `CHECKPOINT_JUPYTERLAB_4.6.5_UPGRADE_PORTED_1.1.36`. A same-day CI fix made check-links ignore pepy.tech after a 503.
