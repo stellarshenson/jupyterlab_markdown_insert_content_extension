@@ -805,6 +805,64 @@ test.describe('Heading as TOC caption', () => {
   });
 });
 
+test.describe('Settings', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto();
+  });
+
+  test('changed settings are used by the next command without a reload', async ({
+    page
+  }) => {
+    await page.menu.clickMenuItem('File>New>Markdown File');
+    await page.waitForSelector('.jp-FileEditor');
+
+    const editor = page.locator('.jp-FileEditor .cm-content');
+    await editor.click();
+    await page.keyboard.type('\n# Alpha\n\n## Beta\n\n### Gamma\n');
+    await page.keyboard.press('Control+Home');
+
+    // Change all four settings in the running lab through the settings registry
+    await page.evaluate(async () => {
+      const registry = await (window as any).galata.getPlugin(
+        '@jupyterlab/apputils-extension:settings'
+      );
+      const id =
+        '@stellarshenson/jupyterlab-markdown-insert-content-extension:plugin';
+      await registry.set(id, 'tocCaption', '**Contents here**');
+      await registry.set(id, 'tocMaxLevel', 2);
+      await registry.set(id, 'numberingMaxLevel', 2);
+      await registry.set(id, 'numberingTrailingDot', true);
+    });
+
+    const content = () =>
+      page.evaluate(
+        () =>
+          document.querySelector('.jp-FileEditor .cm-content')?.textContent ||
+          ''
+      );
+
+    await editor.click({ button: 'right' });
+    await page.click('li.lm-Menu-item:has-text("Markdown Tools")');
+    await page.click('li.lm-Menu-item:has-text("Insert Table of Contents")');
+    await expect.poll(content).toContain('<!-- TOC:BEGIN DEPTH=2 -->');
+
+    const withToc = await content();
+    expect(withToc).toContain('**Contents here**');
+    expect(withToc).not.toContain('**Table of Contents**');
+    expect(withToc).toContain('[Beta]');
+    expect(withToc).not.toContain('[Gamma]');
+
+    await editor.click({ button: 'right' });
+    await page.click('li.lm-Menu-item:has-text("Markdown Tools")');
+    await page.click('li.lm-Menu-item:has-text("Add Heading Numbering")');
+    await expect.poll(content).toContain('# 1. Alpha');
+
+    const numbered = await content();
+    expect(numbered).toContain('## 1.1. Beta');
+    expect(numbered).toContain('### Gamma');
+  });
+});
+
 test.describe('Notebook Markdown Cells', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto();
