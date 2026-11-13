@@ -92,8 +92,11 @@ Alert boxes, emoji and glyph picker, menu and settings
   - test-tags: E2E
   - log: 2026-11-13T07:14:58Z @kj added
   - log: 2026-11-13T07:19:19Z @kj closed
-- [ ] `ACC-FRAG-12-SETTINGS` **Settings apply without restart** - MEDIUM; tocCaption, tocMaxLevel, numberingMaxLevel and numberingTrailingDot from the settings registry are used by the next command; defaults: bold caption, 3, 5, no trailing dot
-  - test: Galata 'numbering respects maxLevel setting (default 5)' covers the defaults; changing a setting is manual
-  - test-tags: E2E, MANUAL
+- [x] `ACC-FRAG-12-SETTINGS` **Settings apply without restart** - MEDIUM; tocCaption, tocMaxLevel, numberingMaxLevel and numberingTrailingDot from the settings registry are used by the next command; defaults: bold caption, 3, 5, no trailing dot
+  - evidence: the tests its test line names pass: build_test.py 2026-11-13: Jest 25, Galata 44 passed
+  - test: Galata 'changed settings are used by the next command without a reload' (all four settings changed through the settings registry); 'numbering respects maxLevel setting (default 5)' covers the defaults
+  - test-tags: E2E
   - log: 2026-11-13T07:14:58Z @kj added
+  - log: 2026-11-13T09:19:59Z @kj edited test "Galata 'numbering respects maxLevel setting (default 5)' covers the defaults; changing a setting is manual" -> "Galata 'changed settings are used by the next command without a reload' (all four settings changed through the settings registry); 'numbering respects maxLevel setting (default 5)' covers the defaults"; test-tags "E2E, MANUAL" -> "E2E"
+  - log: 2026-11-13T09:19:59Z @kj closed
 
