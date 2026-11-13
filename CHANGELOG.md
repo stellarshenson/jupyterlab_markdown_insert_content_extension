@@ -52,6 +52,19 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## [1.1.40] - 2026-11-13
+
+### Changed
+
+- Close the settings criterion with its test evidence
+- Prove a changed setting is used by the next command
+- Skip the PayPal donate link in the link check
+
+### Fixed
+
+- Keep a heading TOC caption out of the TOC and the numbering
+- Recognise dotless heading numbers and match TOC anchors to rendered headings
+
 ## [1.1.36] - 2026-10-31
 
 ### Changed
