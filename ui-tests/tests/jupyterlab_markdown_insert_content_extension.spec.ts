@@ -738,6 +738,73 @@ Some content after TOC.
   });
 });
 
+test.describe('Heading as TOC caption', () => {
+  test.use({
+    mockSettings: {
+      '@stellarshenson/jupyterlab-markdown-insert-content-extension:plugin': {
+        tocCaption: '## Contents'
+      }
+    }
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto();
+  });
+
+  test('caption heading is not listed in the TOC and takes no number', async ({
+    page
+  }) => {
+    const markdownWithTOC = `<!-- TOC:BEGIN -->
+## Contents
+
+- [Old Heading](#Old-Heading)
+<!-- TOC:END -->
+
+# Title
+
+## Section One
+
+## Section Two
+`;
+
+    await page.menu.clickMenuItem('File>New>Markdown File');
+    await page.waitForSelector('.jp-FileEditor');
+
+    const editor = page.locator('.jp-FileEditor .cm-content');
+    await editor.click();
+    await page.keyboard.type(markdownWithTOC);
+
+    const readContent = () =>
+      page.evaluate(
+        () =>
+          document.querySelector('.jp-FileEditor .cm-content')?.textContent ||
+          ''
+      );
+
+    await editor.click({ button: 'right' });
+    await page.click('li.lm-Menu-item:has-text("Markdown Tools")');
+    await page.click('li.lm-Menu-item:has-text("Update Table of Contents")');
+    await page.waitForTimeout(500);
+
+    let content = await readContent();
+    expect(content).toContain('## Contents');
+    expect(content).toContain('[Section One]');
+    expect(content).not.toContain('[Contents]');
+
+    await editor.click({ button: 'right' });
+    await page.click('li.lm-Menu-item:has-text("Markdown Tools")');
+    await page.click('li.lm-Menu-item:has-text("Add Heading Numbering")');
+    await page.waitForTimeout(500);
+
+    content = await readContent();
+    expect(content).toContain('## Contents');
+    expect(content).not.toContain('Contents]');
+    expect(content).toContain('# 1 Title');
+    expect(content).toContain('## 1.1 Section One');
+    expect(content).toContain('## 1.2 Section Two');
+  });
+});
+
 test.describe('Notebook Markdown Cells', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto();

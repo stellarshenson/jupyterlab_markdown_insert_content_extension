@@ -43,6 +43,13 @@ TOC generation, update and anchor links
   - repro: md file with '## The `run` command', Insert Table of Contents, open preview, click the link
   - log: 2026-11-13T07:14:38Z @kj added
   - log: 2026-11-13T07:19:18Z @kj closed
+- [x] `DEF-TOC-8-CAPTION-HEADING` **Heading caption is listed in its own TOC and numbered** - MEDIUM; tocCaption set to a heading ('## Contents'): Update TOC lists Contents as a TOC entry, Add Heading Numbering gives the caption a section number; src/index.ts extractHeadings and addNumberingToText
+  - evidence: both scans skip the lines from TOC:BEGIN to TOC:END, src/index.ts; Galata 'caption heading is not listed in the TOC and takes no number'; build_test.py 2026-11-13: Jest 25, Galata 43 passed
+  - repro: setting tocCaption '## Contents', md file with a TOC and headings, Update Table of Contents, then Add Heading Numbering
+  - test-tags: E2E
+  - root-cause: 2026-11-13T07:38:50Z @kj extractHeadings and addNumberingToText scan every line outside a code fence, the lines between TOC:BEGIN and TOC:END included
+  - log: 2026-11-13T07:38:50Z @kj added
+  - log: 2026-11-13T07:41:30Z @kj closed
 
 ## Documentation `DOCS`
 

@@ -114,11 +114,22 @@ function addNumberingToText(
   const lines = text.split('\n');
   const counters = [0, 0, 0, 0, 0, 0]; // counters for h1-h6
   let inCodeBlock = false;
+  let inTOC = false;
   const result: string[] = [];
   const headingMappings: IHeadingMapping[] = [];
 
   // First pass: number headings and collect mappings
   for (const line of lines) {
+    // The TOC block is not document content: a heading caption takes no number
+    if (TOC_BEGIN_PATTERN.test(line)) {
+      inTOC = true;
+    }
+    if (inTOC) {
+      inTOC = !line.includes(TOC_END_MARKER);
+      result.push(line);
+      continue;
+    }
+
     // Check for code block delimiters
     if (line.match(/^```/) || line.match(/^~~~/)) {
       inCodeBlock = !inCodeBlock;
@@ -292,9 +303,19 @@ function extractHeadings(text: string, maxLevel: number): IHeading[] {
   const headings: IHeading[] = [];
   const lines = text.split('\n');
   let inCodeBlock = false;
+  let inTOC = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+
+    // The TOC block is not document content: a heading caption is not listed
+    if (TOC_BEGIN_PATTERN.test(line)) {
+      inTOC = true;
+    }
+    if (inTOC) {
+      inTOC = !line.includes(TOC_END_MARKER);
+      continue;
+    }
 
     // Check for code block delimiters (``` or ~~~)
     if (line.match(/^```/) || line.match(/^~~~/)) {
