@@ -32,7 +32,7 @@ Configure TOC caption and maximum heading level through JupyterLab settings:
 - **TOC update support** - regenerates existing TOC in place using markers (`<!-- TOC:BEGIN -->` and `<!-- TOC:END -->`)
 - **Per-TOC depth configuration** - each TOC stores its depth in the marker (`<!-- TOC:BEGIN DEPTH=3 -->`) and preserves it across updates
 - **Heading exclusion** - mark headings with `<!-- TOC:IGNORE -->` to exclude from TOC while preserving numbering
-- **Hierarchical heading numbering** - add, remove, or update numbering on headings (1., 1.1., 1.1.2., etc.)
+- **Hierarchical heading numbering** - add, remove, or update numbering on headings (1, 1.1, 1.1.2, or 1., 1.1., 1.1.2. with the trailing dot setting)
 - **GitHub alert boxes** - insert `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]` or `> [!CAUTION]` blockquotes, wrapping the current selection when there is one
 - **Emoji picker** - searchable emoji dialog that tracks frequently used emoji, with the dataset bundled so it works offline
 - **Glyph picker** - second tab in the same dialog with about 150 Unicode glyphs (stars, checkboxes, arrows, bars, shapes, box drawing, math, Greek, currency, typography), searchable by name, with recently used glyphs first and any character reachable by its code point
@@ -71,11 +71,13 @@ To update an existing TOC:
 Add hierarchical numbering to your headings:
 
 1. Right-click and select **Markdown Tools > Add Heading Numbering**
-2. Headings become numbered: `# Introduction` -> `# 1. Introduction`
+2. Headings become numbered: `# Introduction` -> `# 1 Introduction`
 
 Other numbering commands:
 - **Remove Heading Numbering** - strips all numbering from headings
 - **Update Heading Numbering** - recalculates numbering and updates TOC
+
+A heading that starts with a number and a space, such as `# 2024 Report`, is read as numbered: the number is replaced or removed.
 
 ### Alert Boxes
 
@@ -113,8 +115,8 @@ Access settings through Settings -> Settings Editor -> Markdown Insert Content:
 
 - **TOC Caption** - markdown content inserted before TOC list (default: `**Table of Contents**`)
 - **Maximum TOC Heading Level** - deepest heading level to include in TOC (1-6, default: 3)
-- **Maximum Numbering Level** - deepest heading level to number (1-6, default: 3)
-- **Trailing Dot in Numbering** - add trailing dot after numbers (default: enabled, e.g., `1.2.` vs `1.2`)
+- **Maximum Numbering Level** - deepest heading level to number (1-6, default: 5)
+- **Trailing Dot in Numbering** - add trailing dot after numbers (default: disabled, e.g., `1.2.` vs `1.2`)
 
 Settings apply immediately without restart.
 

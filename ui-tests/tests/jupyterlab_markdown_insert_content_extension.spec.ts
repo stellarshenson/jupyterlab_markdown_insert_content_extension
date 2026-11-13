@@ -345,6 +345,42 @@ test.describe('Heading Numbering', () => {
     expect(content).toContain('## 1.1 Sub First');
     expect(content).toContain('# 2 Second');
   });
+
+  test('should renumber and remove numbering written without the trailing dot', async ({
+    page
+  }) => {
+    await page.menu.clickMenuItem('File>New>Markdown File');
+    await page.waitForSelector('.jp-FileEditor');
+
+    const editor = page.locator('.jp-FileEditor .cm-content');
+    await editor.click();
+    await page.keyboard.type('# First\n\n## Sub First\n\n# Second\n');
+
+    const lines = () =>
+      page.evaluate(() =>
+        Array.from(
+          document.querySelectorAll('.jp-FileEditor .cm-line'),
+          line => line.textContent ?? ''
+        ).filter(Boolean)
+      );
+    const run = async (label: string) => {
+      await editor.click({ button: 'right' });
+      await page.click('li.lm-Menu-item:has-text("Markdown Tools")');
+      await page.click(`li.lm-Menu-item:has-text("${label}")`);
+    };
+    const numbered = ['# 1 First', '## 1.1 Sub First', '# 2 Second'];
+
+    await run('Add Heading Numbering');
+    await expect.poll(lines).toEqual(numbered);
+
+    // A second pass replaces the numbers, it does not stack a second set
+    await run('Update Heading Numbering');
+    await page.waitForTimeout(500);
+    expect(await lines()).toEqual(numbered);
+
+    await run('Remove Heading Numbering');
+    await expect.poll(lines).toEqual(['# First', '## Sub First', '# Second']);
+  });
 });
 
 test.describe('TOC:IGNORE Marker', () => {

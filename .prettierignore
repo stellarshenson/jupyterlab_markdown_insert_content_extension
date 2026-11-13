@@ -21,3 +21,4 @@ eslint.config.mjs
 .venv
 .claude
 .agents
+docs

@@ -10,6 +10,11 @@ import { Menu, Panel, Widget } from '@lumino/widgets';
 import { Picker } from 'emoji-picker-element';
 import emojiDataUrl from 'emoji-picker-element-data/en/emojibase/data.json';
 import {
+  generateHeadingId,
+  NUMBERING_PATTERN,
+  stripNumbering
+} from './headings';
+import {
   formatCodePoint,
   GLYPH_GROUPS,
   glyphFor,
@@ -68,38 +73,6 @@ interface ISettings {
   tocMaxLevel: number;
   numberingMaxLevel: number;
   numberingTrailingDot: boolean;
-}
-
-/**
- * Regex pattern to match hierarchical numbering at start of heading text
- * Matches patterns like: "1.", "1.2.", "1.2.3.", etc.
- */
-const NUMBERING_PATTERN = /^(\d+\.)+\s*/;
-
-/**
- * Removes hierarchical numbering from heading text
- * Examples:
- *   "1. Introduction" -> "Introduction"
- *   "1.2.3. Deep Section" -> "Deep Section"
- */
-function stripNumbering(text: string): string {
-  return text.replace(NUMBERING_PATTERN, '');
-}
-
-/**
- * Generates anchor ID from heading text matching JupyterLab's format
- * JupyterLab preserves Title-Case and replaces spaces with hyphens
- * Examples:
- *   "Technology Decision Summary" -> "Technology-Decision-Summary"
- *   "CPL-1: User Experience" -> "CPL-1:-User-Experience"
- *   "1.2. Numbered Heading" -> "1.2.-Numbered-Heading"
- */
-function generateHeadingId(text: string): string {
-  // Remove trailing pilcrow (¶) if present
-  const cleaned = text.replace(/¶+$/, '').trim();
-
-  // Replace spaces with hyphens, preserving case and special characters
-  return cleaned.replace(/\s+/g, '-');
 }
 
 /**
@@ -620,28 +593,20 @@ function addNumberingInNotebook(
     }
   }
 
-  // Combine all markdown content
-  const allText = cellContents.map(c => c.source).join('\n\n');
-
-  // Add numbering to combined text
-  const numberedText = addNumberingToText(
-    allText,
+  // A separator no cell contains, so the numbered text splits back into the
+  // same cells whatever blank lines their sources end with
+  const separator = '\n\u0000\n';
+  const numberedParts = addNumberingToText(
+    cellContents.map(c => c.source).join(separator),
     settings.numberingMaxLevel,
     settings.numberingTrailingDot
-  );
+  ).split(separator);
 
-  // Split back and update cells
-  const numberedParts = numberedText.split('\n\n');
-  let partIndex = 0;
-
-  for (const cellInfo of cellContents) {
-    const cell = notebook.model!.cells.get(cellInfo.index);
-    // Count how many parts this cell originally had
-    const originalParts = cellInfo.source.split('\n\n').length;
-    const cellParts = numberedParts.slice(partIndex, partIndex + originalParts);
-    cell.sharedModel.setSource(cellParts.join('\n\n'));
-    partIndex += originalParts;
-  }
+  cellContents.forEach((cellInfo, i) => {
+    notebook
+      .model!.cells.get(cellInfo.index)
+      .sharedModel.setSource(numberedParts[i]);
+  });
 }
 
 /**
@@ -1714,6 +1679,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
           currentWidget === notebookTracker.currentWidget
         ) {
           addNumberingInNotebook(notebookTracker, settings);
+          // Regenerate the TOC, so its links follow the renamed headings
+          updateTOCInNotebook(notebookTracker, settings);
           return;
         }
 
@@ -1725,6 +1692,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
           const path = editorTracker.currentWidget.context.path;
           if (path.endsWith('.md') || path.endsWith('.markdown')) {
             addNumberingInFileEditor(editorTracker, settings);
+            // Regenerate the TOC, so its links follow the renamed headings
+            updateTOCInFileEditor(editorTracker, settings);
             return;
           }
         }
@@ -1747,6 +1716,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
           currentWidget === notebookTracker.currentWidget
         ) {
           removeNumberingInNotebook(notebookTracker);
+          // Regenerate the TOC, so its links follow the renamed headings
+          updateTOCInNotebook(notebookTracker, settings);
           return;
         }
 
@@ -1758,6 +1729,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
           const path = editorTracker.currentWidget.context.path;
           if (path.endsWith('.md') || path.endsWith('.markdown')) {
             removeNumberingInFileEditor(editorTracker);
+            // Regenerate the TOC, so its links follow the renamed headings
+            updateTOCInFileEditor(editorTracker, settings);
             return;
           }
         }

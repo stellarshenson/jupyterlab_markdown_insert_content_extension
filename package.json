@@ -1,6 +1,6 @@
 {
     "name": "@stellarshenson/jupyterlab-markdown-insert-content-extension",
-    "version": "1.1.36",
+    "version": "1.1.37",
     "description": "Jupyterlab extension to automatically insert content into markdown - such as TOC, bibliography, list of figures etc.",
     "keywords": [
         "jupyter",
@@ -147,6 +147,6 @@
         }
     },
     "allowScripts": {
-        "@fortawesome/fontawesome-free": true
+        "@fortawesome/fontawesome-free@5.15.4": true
     }
 }
